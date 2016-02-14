@@ -21,15 +21,14 @@ public abstract class BJavascriptProgram extends BPApplication {
     public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
     protected Arbiter _arbiter;
 
-    public Scriptable getGlobalScope() {
-        return _globalScope;
-    }
-
-    protected Scriptable _globalScope;
-
+    private Scriptable _globalScope;
+    
     public BJavascriptProgram() {
-        _arbiter = new Arbiter();
-        setupGlobalScope();
+        super();
+    }
+    
+    public BJavascriptProgram( String aName ) {
+        super( aName );
     }
 
     public static Object evaluateInGlobalContext(Scriptable scope,
@@ -116,18 +115,18 @@ public abstract class BJavascriptProgram extends BPApplication {
             System.out.println(getClass().getSimpleName() + ": " + s);
     }
 
+    @Override
+    public void start() throws InterruptedException {
+        setupGlobalScope();
+        setupBThreadScopes();
+        super.start();
+    }
+    
     protected void setupBThreadScopes() {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1); // must use interpreter mode
         try {
-            for (BThread bt : _bthreads) {
-//                bplog("settping up " + bt + " scope");
-                bt.setupScope(_globalScope);
-//                if (bt.getScript() == null)
-//                    bt.setScript("runBThread();\n");
-//                _globalScope.register(bt.getName(),
-//                        _globalScope, Context.javaToJS(bt, _globalScope));
-            }
+            _bthreads.forEach( bt -> bt.setupScope(_globalScope) );
         } finally {
             Context.exit();
         }
@@ -145,15 +144,28 @@ public abstract class BJavascriptProgram extends BPApplication {
                     Context.javaToJS(none, _globalScope));
             _globalScope.put("all", _globalScope,
                     Context.javaToJS(all, _globalScope));
+            InputStream script =
+                    BJavascriptProgram.class.getResourceAsStream("globalScopeInit.js");
+            evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
+            
+            setupProgramScope();
+            
         } finally {
             Context.exit();
         }
 
-        InputStream script =
-                BJavascriptProgram.class.getResourceAsStream("globalScopeInit.js");
-        evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
     }
-
+    
+    /**
+     * The BProgram should set up its scope here (e.g. load the script for BThreads).
+     * This method is called after {@link #setupGlobalScope()}.
+     */
+    protected abstract void setupProgramScope();
+    
+    protected void loadJavascriptFile( String path ) {
+        evaluateInGlobalScope(getClass().getResource(path).getPath());
+    }
+    
     /**
      *  makes the obj available in the java script code , under the given name "objName"
      *
@@ -169,6 +181,10 @@ public abstract class BJavascriptProgram extends BPApplication {
         } finally {
             Context.exit();
         }
+    }
+    
+    public Scriptable getGlobalScope() {
+        return _globalScope;
     }
 }
 

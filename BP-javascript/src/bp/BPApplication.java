@@ -26,27 +26,40 @@ public abstract class BPApplication implements Cloneable, Serializable {
     /**
      * Program _name is set to be the simple class _name by default.
      */
-    protected transient String _name = this.getClass().getSimpleName();
+    protected transient String _name;
     private Arbiter _arbiter;
     private volatile BlockingQueue<BEvent> _inputEventQueue;
     private volatile BlockingQueue<BEvent> _outputEventQueue;
     protected ExecutorService _executor;
     private boolean _started = false;
 
-    public void setArbiter(Arbiter arbiter) {
-        this._arbiter = arbiter;
-        arbiter.setProgram(this);
-    }
-
     public BPApplication() {
-        _bthreads = new ArrayList<BThread>();
-        _arbiter = new Arbiter();
+        this(null);
+    }
+    
+    public BPApplication( String aName ) {
+        this( aName, new Arbiter() );
+    }
+    
+    public BPApplication( String aName, Arbiter anArbiter ) {
+        _name = aName;
+        _bthreads = new ArrayList<>();
+        _arbiter = anArbiter;
         _arbiter.setProgram(this);
         _inputEventQueue = new LinkedBlockingQueue<>();
         _outputEventQueue = new LinkedBlockingQueue<>();
         _executor = new ForkJoinPool();
     }
-
+    
+    /**
+     * Set fields unset by constructors of this class or its subclasses.
+     */
+    {
+        if ( getName() == null ) {
+            setName( this.getClass().getSimpleName() );
+        }
+    }
+    
     public void bplog(String string) {
         if (debugMode)
             System.out.println("[" + this + "]: " + string);
@@ -57,7 +70,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
     }
 
     /**
-     * @return an ArrayList of all enabled events that are requestable
+     * @return an set of all enabled events that are requestable
      */
     public Set<BEvent> legalEvents() {
         Set<BEvent> enabled = new TreeSet<>();
@@ -76,27 +89,21 @@ public abstract class BPApplication implements Cloneable, Serializable {
     }
 
     /**
-     * @return the given bprogram _name
+     * @return the given bprogram's _name
      */
     public String getName() {
         return _name;
     }
 
     /**
-     * A function that checks if an event is blocked by some be-thread.
+     * A function that checks if an event is blocked by some b-thread.
      *
      * @param e An event.
      * @return true if the event is blocked by some be-thread.
      */
     public boolean isBlocked(BEvent e) {
-        for (BThread bt : getBThreads()) {
-            // bplog("_bt=" + _bt + " blockedEvents=" + _bt.blockedEvents);
-            if (bt.getBlockedEvents().contains(e)) {
-//                bplog(e + " is blocked by " + bt);
-                return true;
-            }
-        }
-        return false;
+        return getBThreads().stream()
+                .anyMatch( bt -> bt.getBlockedEvents().contains(e) );
     }
 
     /**
@@ -153,7 +160,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
      * @return
      */
     public Collection<EventSetInterface> getWatchedEventSets() {
-        Collection<EventSetInterface> ret = new ArrayList<EventSetInterface>();
+        Collection<EventSetInterface> ret = new ArrayList<>();
         for (BThread bt : _bthreads) {
             ret.add(bt.getWaitedEvents());
         }
@@ -162,7 +169,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
 
     // GW: Get all events that are requested but blocked when program is idle
     public Collection<BEvent> getRequestedBlockedEvents() {
-        Collection<BEvent> blocked = new ArrayList<BEvent>();
+        Collection<BEvent> blocked = new ArrayList<>();
         for (BThread bt : _bthreads) {
             Iterator<RequestableInterface> it = bt.getRequestedEvents().iterator();
             while (it.hasNext()) {
@@ -199,7 +206,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
         String st;
         if (lastEvent != null) {
             eventLog.add(lastEvent);
-            st = new String("Event #" + eventLog.size() + ": " + getLastEvent());
+            st = "Event #" + eventLog.size() + ": " + getLastEvent();
             bplog(st);
             bplog(">> starting bthread wakeup");
             // Interrupt and notify the be-threads that need to be
@@ -224,8 +231,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
             }
             bplog("<< finished bthread wakeup");
         } else { // lastEvent == null -> deadlock?
-            st = new String(
-                    "No events chosen. Waiting for external event or stuck in bsync...?");
+            st = "No events chosen. Waiting for external event or stuck in bsync...?";
             bplog(st);
         }
     }
@@ -239,9 +245,7 @@ public abstract class BPApplication implements Cloneable, Serializable {
     }
 
     public void add(Collection<BThread> bts) {
-        for (BThread bt : bts) {
-            add(bt);
-        }
+        _bthreads.addAll(bts);
     }
 
     public void add(BThread bt) {
@@ -285,12 +289,10 @@ public abstract class BPApplication implements Cloneable, Serializable {
         bplog("********* Starting " + _bthreads.size()
                 + " scenarios  **************");
 
-        Collection<StartBThread> startBtTasks =
-                new ArrayList<>(_bthreads.size());
-        for (BThread bt : _bthreads) {
-            startBtTasks.add(new StartBThread(bt));
-        }
-
+        Collection<StartBThread> startBtTasks = new ArrayList<>(_bthreads.size());
+        _bthreads.stream().map( bt-> new StartBThread(bt) )
+                          .forEach( startBtTasks::add );
+        
         _executor.invokeAll(startBtTasks);
         bplog("********* " + _bthreads.size()
                 + " scenarios started **************");
@@ -304,5 +306,12 @@ public abstract class BPApplication implements Cloneable, Serializable {
             _executor.execute(new StartBThread(bt));
         }
     }
+    
+    
+    public void setArbiter(Arbiter arbiter) {
+        this._arbiter = arbiter;
+        arbiter.setProgram(this);
+    }
+
 
 }

@@ -13,7 +13,8 @@ import static bp.BProgramControls.debugMode;
 import static bp.eventSets.EventSetConstants.none;
 
 /**
- * Created by orelmosheweinstock on 3/24/15.
+ * A BThread that wraps a javascript function.
+ * @author orelmosheweinstock
  */
 public class BThread implements Serializable {
 
@@ -173,7 +174,7 @@ public class BThread implements Serializable {
             closeGlobalContext();
         }
 
-        bplog(" I'm over!");
+        bplog("Done");
         _alive = false;
         zombie();
         return null;

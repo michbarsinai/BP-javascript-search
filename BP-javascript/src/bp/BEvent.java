@@ -16,7 +16,7 @@ import static bp.BProgramControls.debugMode;
 public class BEvent implements EventSetInterface,
         RequestableInterface, Comparable<BEvent> {
 
-    protected String _name = this.getClass().getSimpleName();
+    protected String _name;
     protected boolean _outputEvent = false;
 
     public BEvent(String name, boolean outputEvent) {
@@ -25,19 +25,30 @@ public class BEvent implements EventSetInterface,
     }
 
     public BEvent() {
+        this(null);
     }
 
-    public BEvent(String _name) {
-        this._name = _name;
+    public BEvent(String aName) {
+        this(aName, false);
     }
-
+    
+    /**
+     * Object initializer for getting a default event name, 
+     * if needed.
+     */
+    {
+        if ( _name==null ) {
+            _name = getClass().getSimpleName();
+        }
+    }
+    
     public boolean isOutputEvent() {
         return _outputEvent;
     }
 
     @Override
     public boolean contains(Object o) {
-        return this.equals(o);
+        return equals(o);
     }
 
     public Iterator<RequestableInterface> iterator() {
@@ -81,7 +92,7 @@ public class BEvent implements EventSetInterface,
     }
 
     public ArrayList<BEvent> getEventList() {
-        ArrayList<BEvent> list = new ArrayList<BEvent>();
+        ArrayList<BEvent> list = new ArrayList<>();
         this.addEventsToList(list);
         return list;
     }
@@ -92,10 +103,10 @@ public class BEvent implements EventSetInterface,
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if ( obj == this ) return true;
+        if ( obj == null ) return false;
+        if ( ! (obj instanceof BEvent) ) return false;
+        
         BEvent other = (BEvent) obj;
         return _name.equals(other.getName());
     }

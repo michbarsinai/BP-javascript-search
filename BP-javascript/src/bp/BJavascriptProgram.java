@@ -12,6 +12,69 @@ import static bp.eventSets.EventSetConstants.all;
 import static bp.eventSets.EventSetConstants.none;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
 
 /**
  * Created by orelmosheweinstock on 3/28/15.
@@ -126,7 +189,7 @@ public abstract class BJavascriptProgram extends BPApplication {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1); // must use interpreter mode
         try {
-            _bthreads.forEach( bt -> bt.setupScope(_globalScope) );
+            bthreads.forEach( bt -> bt.setupScope(_globalScope) );
         } finally {
             Context.exit();
         }

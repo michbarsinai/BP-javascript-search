@@ -50,7 +50,7 @@ public class Arbiter {
     }
 
     protected BEvent selectEventFromProgram() {
-        Set<BEvent> legals = _app.legalEvents();
+        Set<BEvent> legals = _app.requestedAndNotBlockedEvents();
         Iterator<BEvent> it = legals.iterator();
         if (it.hasNext()) {
             return it.next();

@@ -13,38 +13,45 @@ import static bp.BProgramControls.debugMode;
 import static bp.eventSets.EventSetConstants.none;
 
 /**
- * A BThread that wraps a javascript function.
+ * A Java BThread that wraps a Javascript function.
+ * 
  * @author orelmosheweinstock
+ * @author Michael
  */
 public class BThread implements Serializable {
 
-    public Function _func = null;
-    protected String _name = this.getClass().getSimpleName();
-    public Scriptable _scope;
-    protected ContinuationPending _cont;
+    /** The javascript function that will be called when {@code this} BThread runs. */
+    private Function entryPoint;
+    
+    private String name;
+    private Scriptable scope;
+    protected ContinuationPending continuation;
+    
+    // TODO CONTPOINT: replace these with the RWBStatement object!
     protected RequestableInterface _request;
     protected EventSetInterface _wait;
     protected EventSetInterface _block;
-    protected boolean _alive = true;
-    private Context _globalContext;
+    protected boolean alive = true;
+    private Context globalContext;
 
 
-    public BThread() {
+    public BThread(String name, Function func) {
         _request = none;
         _wait = none;
         _block = none;
+        this.name = name;
+        entryPoint = func;
+    }
+
+    public BThread() {
+        this(BThread.class.getName(), null);
     }
 
     private void openGlobalContext() {
-        _globalContext = ContextFactory.getGlobal().enterContext();
-        _globalContext.setOptimizationLevel(-1); // must use interpreter mode
+        globalContext = ContextFactory.getGlobal().enterContext();
+        globalContext.setOptimizationLevel(-1); // must use interpreter mode
     }
 
-    public BThread(String name, Function func) {
-        this();
-        _name = name;
-        _func = func;
-    }
 
     public RequestableInterface getRequestedEvents() {
         return _request;
@@ -79,15 +86,15 @@ public class BThread implements Serializable {
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public void setName(String name) {
-        _name = name;
+        this.name = name;
     }
 
     public String toString() {
-        return "[" + _name + "]";
+        return "[" + name + "]";
     }
 
     public void bplog(String string) {
@@ -96,28 +103,28 @@ public class BThread implements Serializable {
     }
 
     public boolean isAlive() {
-        return _alive;
+        return alive;
     }
 
-    public ContinuationPending getCont() {
-        return _cont;
+    public ContinuationPending getContinuation() {
+        return continuation;
     }
 
-    public void setCont(ContinuationPending cont) {
-        _cont = cont;
+    public void setContinuation(ContinuationPending cont) {
+        continuation = cont;
     }
 
     public void setupScope(Scriptable programScope) {
-        _scope = generateBThreadScope(programScope);
-        if (_func != null) {
-            Scriptable funcScope = _func.getParentScope();
+        scope = generateBThreadScope(programScope);
+        if (entryPoint != null) {
+            Scriptable funcScope = entryPoint.getParentScope();
             if (funcScope != programScope) {
                 while (funcScope.getParentScope() != programScope) {
                     funcScope = funcScope.getParentScope();
                 }
-                funcScope.setParentScope(_scope);
+                funcScope.setParentScope(scope);
             } else {
-                _func.setParentScope(_scope);
+                entryPoint.setParentScope(scope);
             }
         }
     }
@@ -149,10 +156,10 @@ public class BThread implements Serializable {
         try {
             openGlobalContext();
             bplog("started!");
-            _globalContext.callFunctionWithContinuations(_func, _scope,
+            globalContext.callFunctionWithContinuations(entryPoint, scope,
                     new Object[0]);
         } catch (ContinuationPending pending) {
-            _cont = pending;
+            continuation = pending;
         } finally {
             closeGlobalContext();
         }
@@ -161,27 +168,28 @@ public class BThread implements Serializable {
     private void closeGlobalContext() {
         Context.exit();
     }
-
+    
+    // TODO return Optional
     public ContinuationPending resume(BEvent event) {
         try {
             openGlobalContext();
-            Object eventInJS = Context.javaToJS(event, _scope);
+            Object eventInJS = Context.javaToJS(event, scope);
             resumeContinuation(eventInJS);
         } catch (ContinuationPending pending) {
-            _cont = pending;
-            return _cont;
+            continuation = pending;
+            return continuation;
         } finally {
             closeGlobalContext();
         }
-
+        
         bplog("Done");
-        _alive = false;
+        alive = false;
         zombie();
         return null;
     }
 
     private void resumeContinuation(Object eventInJS) {
-        _globalContext.resumeContinuation(_cont.getContinuation(), _scope,
+        globalContext.resumeContinuation(continuation.getContinuation(), scope,
                 eventInJS);
     }
 
@@ -203,7 +211,7 @@ public class BThread implements Serializable {
         try {
             openGlobalContext();
             ContinuationPending pending =
-                    _globalContext.captureContinuation();
+                    globalContext.captureContinuation();
             throw pending;
         } finally {
             closeGlobalContext();
@@ -214,11 +222,12 @@ public class BThread implements Serializable {
         _request = EventSetConstants.none;
         _wait = EventSetConstants.none;
         _block = EventSetConstants.none;
-        _cont = null;
+        continuation = null;
     }
 
     public void revive() {
-        _alive = true;
+        alive = true;
     }
+    
 }
 

@@ -1,13 +1,16 @@
 package bp;
 
-import bp.eventSets.EventSetInterface;
-import bp.eventSets.RequestableInterface;
 import bp.tasks.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 import static bp.BProgramControls.debugMode;
+import bp.eventsets.ComposableEventSet;
+import bp.eventsets.EventSets;
+import java.util.stream.Collectors;
+import bp.eventsets.Requestable;
+import bp.eventsets.EventSet;
 
 public abstract class BPApplication  {
 
@@ -26,12 +29,12 @@ public abstract class BPApplication  {
     public transient Deque<BEvent> eventLog = new LinkedList<>();
     
     /**
-     * Program _name is set to be the simple class _name by default.
+     * Program name is set to be the simple class name by default.
      */
     protected transient String name;
     private Arbiter arbiter;
-    private volatile BlockingQueue<BEvent> inputEventQueue;
-    private volatile BlockingQueue<BEvent> outputEventQueue;
+    private BlockingQueue<BEvent> inputEventQueue;
+    private BlockingQueue<BEvent> outputEventQueue;
     protected ExecutorService executor;
     
     // TODO probably replace with a full enum of PRE_RUN, IN_STEP, IDLE.
@@ -69,7 +72,7 @@ public abstract class BPApplication  {
             System.out.println("[" + this + "]: " + string);
     }
 
-    public Collection<BThread> getBThreads() {
+    public Set<BThread> getBThreads() {
         return bthreads;
     }
 
@@ -77,19 +80,24 @@ public abstract class BPApplication  {
      * @return an set of all enabled events that are requestable
      */
     public Set<BEvent> requestedAndNotBlockedEvents() {
-        Set<BEvent> enabled = new TreeSet<>();
-        for (BThread bt : bthreads) {
-            if (bt.getRequestedEvents() == null)
-                continue;
-
-            ArrayList<BEvent> reqList = bt.getRequestedEvents().getEventList();
-            for (BEvent e : reqList) {
-                if (!isBlocked(e)) {
-                    enabled.add(e);
-                }
-            }
-        }
-        return enabled;
+        Set<Requestable> requested = bthreads.stream().map( BThread::getCurrentRwbStatement )
+                .filter( stmt -> stmt!=null )
+                .map( RWBStatement::getRequest )
+                .filter( r -> r != EventSets.none )
+                .collect( Collectors.toSet() );
+        
+        EventSet blockedSets = ComposableEventSet.anyOf(
+                bthreads.stream().map( BThread::getCurrentRwbStatement )
+                .filter( stmt -> stmt!=null )
+                .map( RWBStatement::getBlock )
+                .filter( r -> r != EventSets.none )
+                .collect( Collectors.toSet() ) );
+        
+        Set<Requestable> canRequest = requested.stream().filter( req -> !blockedSets.contains(req) ).collect( Collectors.toSet() );
+        List<BEvent> events = new ArrayList<>();
+        canRequest.forEach( r -> r.addEventsTo(events) );
+        
+        return new HashSet<>(events);
     }
 
     /**
@@ -107,7 +115,7 @@ public abstract class BPApplication  {
      */
     public boolean isBlocked(BEvent e) {
         return getBThreads().stream()
-                .anyMatch( bt -> bt.getBlockedEvents().contains(e) );
+                .anyMatch( bt -> bt.getCurrentRwbStatement().getBlock().contains(e) );
     }
 
     /**
@@ -161,10 +169,10 @@ public abstract class BPApplication  {
      *
      * @return
      */
-    public Collection<EventSetInterface> getWatchedEventSets() {
-        Collection<EventSetInterface> ret = new ArrayList<>();
+    public Collection<EventSet> getWatchedEventSets() {
+        Collection<EventSet> ret = new ArrayList<>();
         for (BThread bt : bthreads) {
-            ret.add(bt.getWaitedEvents());
+            ret.add(bt.getCurrentRwbStatement().getWaitFor());
         }
         return ret;
     }
@@ -175,13 +183,13 @@ public abstract class BPApplication  {
     public Collection<BEvent> getRequestedBlockedEvents() {
         Collection<BEvent> blocked = new ArrayList<>();
         for (BThread bt : bthreads) {
-            Iterator<RequestableInterface> it = bt.getRequestedEvents().iterator();
+            Iterator<Requestable> it = bt.getCurrentRwbStatement().getRequest().iterator();
             while (it.hasNext()) {
-                RequestableInterface req = it.next();
+                Requestable req = it.next();
                 if (req.isEvent()) {
                     BEvent e = (BEvent) req;
                     for (BThread other : bthreads) {
-                        if (other.getBlockedEvents().contains(e)) {
+                        if (other.getCurrentRwbStatement().getBlock().contains(e)) {
                             blocked.add(e);
                         }
                     }

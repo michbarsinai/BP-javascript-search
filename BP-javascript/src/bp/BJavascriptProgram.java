@@ -8,76 +8,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 
-import static bp.eventSets.EventSetConstants.all;
-import static bp.eventSets.EventSetConstants.none;
+import static bp.eventsets.EventSets.all;
+import static bp.eventsets.EventSets.none;
 import static java.nio.file.Files.readAllBytes;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
 import static java.nio.file.Paths.get;
 
 /**
- * Created by orelmosheweinstock on 3/28/15.
+ * @author orelmosheweinstock 
+ * @author Michael
  */
 public abstract class BJavascriptProgram extends BPApplication {
 
@@ -114,10 +52,8 @@ public abstract class BJavascriptProgram extends BPApplication {
             return evaluateInGlobalContext(scope, script,
                     pathObject.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error while evaluating in global context: "+ e.getMessage(), e);
         }
-
-        return null;
     }
 
     public static Object evaluateInGlobalContext(Scriptable scope,
@@ -132,7 +68,7 @@ public abstract class BJavascriptProgram extends BPApplication {
                 sb.append(line);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("error while reading javascript fom stream", e);
         }
         String script = sb.toString();
         return evaluateInGlobalContext(scope, script, scriptName);
@@ -149,8 +85,11 @@ public abstract class BJavascriptProgram extends BPApplication {
 
     public Object evaluateInGlobalScope(String path,
                                         String scriptname) {
-        InputStream ios = getClass().getResourceAsStream(path);
-        return evaluateInGlobalScope(ios, scriptname);
+        try (InputStream ios = getClass().getResourceAsStream(path) ) {
+            return evaluateInGlobalScope(ios, scriptname);
+        } catch ( IOException iox ) {
+            throw new RuntimeException("Error reading javascript file '" + path + "'", iox);
+        }
     }
 
     /**
@@ -173,6 +112,7 @@ public abstract class BJavascriptProgram extends BPApplication {
         }
     }
 
+    @Override
     public void bplog(String s) {
         if (BProgramControls.debugMode)
             System.out.println(getClass().getSimpleName() + ": " + s);
@@ -198,7 +138,8 @@ public abstract class BJavascriptProgram extends BPApplication {
     protected void setupGlobalScope() {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1); // must use interpreter mode
-        try {
+        try (InputStream script =
+                    BJavascriptProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
             _globalScope = cx.initStandardObjects(importer);
             _globalScope.put("bpjs", _globalScope,
@@ -207,12 +148,13 @@ public abstract class BJavascriptProgram extends BPApplication {
                     Context.javaToJS(none, _globalScope));
             _globalScope.put("all", _globalScope,
                     Context.javaToJS(all, _globalScope));
-            InputStream script =
-                    BJavascriptProgram.class.getResourceAsStream("globalScopeInit.js");
+            
             evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
             
             setupProgramScope();
             
+        } catch (IOException ex) {
+            throw new RuntimeException("Error while setting up global scope", ex );
         } finally {
             Context.exit();
         }

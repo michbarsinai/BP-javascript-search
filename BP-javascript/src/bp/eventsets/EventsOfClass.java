@@ -1,4 +1,4 @@
-package bp.eventSets;
+package bp.eventsets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -7,7 +7,7 @@ import java.util.Iterator;
  * A set containing all event instances from a class list.
  */
 
-public class EventsOfClass extends ArrayList<Class<?>> implements EventSetInterface {
+public class EventsOfClass extends ArrayList<Class<?>> implements EventSet {
 
     private String name;
 

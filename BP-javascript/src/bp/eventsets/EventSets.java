@@ -1,9 +1,9 @@
-package bp.eventSets;
+package bp.eventsets;
 
 /**
- *
+ * 
  */
-public class EventSetConstants {
+public class EventSets {
     public final static EmptyEventSet none = new EmptyEventSet();
     public final static AllEvents all = new AllEvents();
 }

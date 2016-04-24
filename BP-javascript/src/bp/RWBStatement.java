@@ -1,9 +1,9 @@
 package bp;
 
-import static bp.eventSets.EventSetConstants.none;
-import bp.eventSets.EventSetInterface;
-import bp.eventSets.RequestableInterface;
+import static bp.eventsets.EventSets.none;
 import java.util.Objects;
+import bp.eventsets.Requestable;
+import bp.eventsets.EventSet;
 
 /**
  * A statement a BTHread makes about what events it requests, waits for, and blocks.
@@ -16,22 +16,22 @@ public class RWBStatement {
     /**
      * The event requested by this statement
      */
-    private final RequestableInterface request;
+    private final Requestable request;
     
     /**
      * The events waited for (wake thread up when these happen).
      */
-    private final EventSetInterface waitFor;
+    private final EventSet waitFor;
     
     /**
      * The events blocked while this statement is active.
      */
-    private final EventSetInterface block;
+    private final EventSet block;
     
     /**
      * If any of these events happen, the stating thread wants to be terminated.
      */
-    private final EventSetInterface except;    
+    private final EventSet except;    
     
     /**
      * Creates a new request where all fields are set to {@link none}. To be
@@ -45,15 +45,19 @@ public class RWBStatement {
         return new RWBStatement(none, none, none, none);
     }
     
-    public RWBStatement(RequestableInterface request, EventSetInterface waitFor, EventSetInterface block, EventSetInterface except) {
+    public RWBStatement(Requestable request, EventSet waitFor, EventSet block, EventSet except) {
         this.request = request;
         this.waitFor = waitFor;
         this.block = block;
         this.except = except;
     }
 
-    public RWBStatement(RequestableInterface request, EventSetInterface waitFor, EventSetInterface block) {
+    public RWBStatement(Requestable request, EventSet waitFor, EventSet block) {
         this( request, waitFor, block, none);
+    }
+    
+    public boolean shouldWakeFor( BEvent anEvent ) {
+        return request.contains(anEvent) || waitFor.contains(anEvent);
     }
     
     /**
@@ -62,44 +66,44 @@ public class RWBStatement {
      * @param toRequest the request part of the new statement
      * @return a new statement
      */
-    public RWBStatement request( RequestableInterface toRequest ) {
-        return new RWBStatement(request, getWaitFor(), getBlock(), getExcept());
+    public RWBStatement request( Requestable toRequest ) {
+        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getExcept());
     }
     
     /**
      * @see #request
      */
-    public RWBStatement waitFor( EventSetInterface events ) {
+    public RWBStatement waitFor( EventSet events ) {
         return new RWBStatement(getRequest(), events, getBlock(), getExcept());
     }
     
     /**
      * @see #request
      */
-    public RWBStatement block( EventSetInterface events ) {
-        return new RWBStatement(getRequest(), getWaitFor(), block, getExcept());
+    public RWBStatement block( EventSet events ) {
+        return new RWBStatement(getRequest(), getWaitFor(), events, getExcept());
     }
     
     /**
      * @see #request
      */
-    public RWBStatement except( EventSetInterface events ) {
-        return new RWBStatement(getRequest(), getWaitFor(), getBlock(), except);
+    public RWBStatement except( EventSet events ) {
+        return new RWBStatement(getRequest(), getWaitFor(), getBlock(), events);
     }
     
-    public RequestableInterface getRequest() {
+    public Requestable getRequest() {
         return request;
     }
 
-    public EventSetInterface getWaitFor() {
+    public EventSet getWaitFor() {
         return waitFor;
     }
 
-    public EventSetInterface getBlock() {
+    public EventSet getBlock() {
         return block;
     }
 
-    public EventSetInterface getExcept() {
+    public EventSet getExcept() {
         return except;
     }
     
@@ -136,10 +140,7 @@ public class RWBStatement {
         if (!Objects.equals(this.getBlock(), other.getBlock())) {
             return false;
         }
-        if (!Objects.equals(this.getExcept(), other.getExcept())) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.getExcept(), other.getExcept());
     }
     
     

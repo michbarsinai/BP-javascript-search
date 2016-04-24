@@ -1,3 +1,5 @@
+/* global bpjs, none, hotEvent, coldEvent, allDone */
+
 bpjs.registerBThread("HotBt", function () {
     bsync(hotEvent, none, none);
     bsync(hotEvent, none, none);

@@ -1,34 +1,33 @@
-package bp.eventSets;
+package bp.eventsets;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Iterator;
 
-// Main class
 @SuppressWarnings("serial")
-public class EventSet extends HashSet<EventSetInterface> implements
-        EventSetInterface, Serializable {
+public class HashEventSet extends HashSet<EventSet> implements
+        EventSet, Serializable {
 
     private String name = null;
 
-    public EventSet(EventSetInterface... eSetInterfaces) {
+    public HashEventSet(EventSet... eSetInterfaces) {
         super();
 
-        for (EventSetInterface eSetInterface : eSetInterfaces) {
+        for (EventSet eSetInterface : eSetInterfaces) {
             add(eSetInterface);
         }
     }
 
-    public EventSet(String name, EventSetInterface... eSetInterfaces) {
+    public HashEventSet(String name, EventSet... eSetInterfaces) {
         this(eSetInterfaces);
         this.setName(name);
     }
 
     public boolean contains(Object o) {
-        Iterator<EventSetInterface> itr = this.iterator();
+        Iterator<EventSet> itr = this.iterator();
 
         while (itr.hasNext()) {
-            EventSetInterface eSetInterface = itr.next();
+            EventSet eSetInterface = itr.next();
             if (eSetInterface.contains(o)) {
                 return true;
             }

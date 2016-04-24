@@ -1,5 +1,7 @@
+/* global Packages */
+
 importPackage(Packages.bp);
-importPackage(Packages.bp.eventSets);
+importPackage(Packages.bp.eventsets);
 importPackage(Packages.bp.exceptions);
 
 bploop = function(start, end, step, func) {
@@ -11,4 +13,4 @@ bploop = function(start, end, step, func) {
   }
 };
 
-/*java.lang.System.out.println("evaluated globalScopeInit");*/
+//java.lang.System.out.println("evaluated globalScopeInit");

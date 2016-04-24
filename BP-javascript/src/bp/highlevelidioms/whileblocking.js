@@ -1,3 +1,5 @@
+/* global bsync, blocking */
+
 var _bsync = bsync;
 
 new Object {
@@ -25,4 +27,4 @@ new Object {
 
     return e;
   }
-}
+};

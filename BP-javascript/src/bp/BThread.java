@@ -1,8 +1,6 @@
 package bp;
 
-import bp.eventSets.EventSetConstants;
-import bp.eventSets.EventSetInterface;
-import bp.eventSets.RequestableInterface;
+import bp.eventsets.EventSets;
 import org.mozilla.javascript.*;
 
 import javax.naming.OperationNotSupportedException;
@@ -10,35 +8,32 @@ import java.io.InputStream;
 import java.io.Serializable;
 
 import static bp.BProgramControls.debugMode;
-import static bp.eventSets.EventSetConstants.none;
+import static bp.eventsets.EventSets.none;
+import bp.eventsets.Requestable;
+import bp.eventsets.EventSet;
 
 /**
- * A Java BThread that wraps a Javascript function.
+ * A Java BThread that wraps a Javascript function containing BP code.
  * 
  * @author orelmosheweinstock
  * @author Michael
  */
 public class BThread implements Serializable {
 
-    /** The javascript function that will be called when {@code this} BThread runs. */
+    /** The Javascript function that will be called when {@code this} BThread runs. */
     private Function entryPoint;
     
     private String name;
     private Scriptable scope;
-    protected ContinuationPending continuation;
+    private ContinuationPending continuation;
     
     // TODO CONTPOINT: replace these with the RWBStatement object!
-    protected RequestableInterface _request;
-    protected EventSetInterface _wait;
-    protected EventSetInterface _block;
-    protected boolean alive = true;
+    private RWBStatement currentRwbStatement;
+    private boolean alive = true;
     private Context globalContext;
 
 
     public BThread(String name, Function func) {
-        _request = none;
-        _wait = none;
-        _block = none;
         this.name = name;
         entryPoint = func;
     }
@@ -52,39 +47,6 @@ public class BThread implements Serializable {
         globalContext.setOptimizationLevel(-1); // must use interpreter mode
     }
 
-
-    public RequestableInterface getRequestedEvents() {
-        return _request;
-    }
-
-    public void setRequestedEvents(RequestableInterface requestedEvents) {
-        _request = requestedEvents;
-    }
-
-    public EventSetInterface getWaitedEvents() {
-        return _wait;
-    }
-
-    public void setWaitedEvents(EventSetInterface watchedEvents) {
-        _wait = watchedEvents;
-    }
-
-    public EventSetInterface getBlockedEvents() {
-        return _block;
-    }
-
-    public void setBlockedEvents(EventSetInterface blockedEvents) {
-        _block = blockedEvents;
-    }
-
-    public boolean isRequested(BEvent event) {
-        return _request.contains(event);
-    }
-
-    public boolean isWaited(BEvent event) {
-        return _wait.contains(event);
-    }
-
     public String getName() {
         return name;
     }
@@ -94,7 +56,7 @@ public class BThread implements Serializable {
     }
 
     public String toString() {
-        return "[" + name + "]";
+        return "[BThread: " + name + "]";
     }
 
     public void bplog(String string) {
@@ -175,37 +137,38 @@ public class BThread implements Serializable {
             openGlobalContext();
             Object eventInJS = Context.javaToJS(event, scope);
             resumeContinuation(eventInJS);
+        
         } catch (ContinuationPending pending) {
             continuation = pending;
             return continuation;
+        
         } finally {
             closeGlobalContext();
         }
         
         bplog("Done");
-        alive = false;
-        zombie();
+        enterZombieMode();
         return null;
     }
 
     private void resumeContinuation(Object eventInJS) {
-        globalContext.resumeContinuation(continuation.getContinuation(), scope,
-                eventInJS);
+        globalContext.resumeContinuation(continuation.getContinuation(), scope, eventInJS);
     }
 
-    public BEvent bsync(Object obj1, EventSetInterface waitedEvents,
-                        EventSetInterface blockedEvents) throws OperationNotSupportedException {
+    // TODO what is this?
+    public BEvent bsync(Object obj1, EventSet waitedEvents,
+                        EventSet blockedEvents) throws OperationNotSupportedException {
         String explanation = "requestedEvents not of type " +
                 "RequestableInterface not supported.";
         throw new OperationNotSupportedException(explanation);
     }
 
-    public BEvent bsync(RequestableInterface requestedEvents,
-                        EventSetInterface waitedEvents,
-                        EventSetInterface blockedEvents) {
-        _request = requestedEvents;
-        _wait = waitedEvents;
-        _block = blockedEvents;
+    public BEvent bsync(Requestable requestedEvents,
+                        EventSet waitedEvents,
+                        EventSet blockedEvents) {
+        currentRwbStatement = RWBStatement.make().request(requestedEvents)
+                                                .waitFor(waitedEvents)
+                                                .block(blockedEvents);
         bplog("bsyncing with " + requestedEvents + ", " +
                 waitedEvents + ", " + blockedEvents);
         try {
@@ -218,15 +181,18 @@ public class BThread implements Serializable {
         }
     }
 
-    public void zombie() {
-        _request = EventSetConstants.none;
-        _wait = EventSetConstants.none;
-        _block = EventSetConstants.none;
+    public void enterZombieMode() {
+        currentRwbStatement = RWBStatement.make();
         continuation = null;
+        alive = false;
     }
 
     public void revive() {
         alive = true;
+    }
+
+    public RWBStatement getCurrentRwbStatement() {
+        return currentRwbStatement;
     }
     
 }

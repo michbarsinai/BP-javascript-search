@@ -13,13 +13,13 @@ import org.mozilla.javascript.Scriptable;
  * @author orelmosheweinstock
  * @author @michbarsinai
  */
-public class HotNCold extends BJavascriptProgram {
+public class HotNColdTest extends BJavascriptProgram {
     
     final BEvent hotEvent = new BEvent("hotEvent", true);
     final BEvent coldEvent = new BEvent("coldEvent", true);
     final BEvent allDoneEvent = new BEvent("allDone", true);
 
-    public HotNCold() {
+    public HotNColdTest() {
         super("HotNCold");
         _arbiter = new Arbiter();
         setArbiter(_arbiter);
@@ -27,7 +27,7 @@ public class HotNCold extends BJavascriptProgram {
 
     @Test
     public void hotNColdTest() throws InterruptedException {
-        final HotNCold hnc = new HotNCold();
+        final HotNColdTest hnc = new HotNColdTest();
         hnc.start();
         System.out.println("starting output event read loop");
 

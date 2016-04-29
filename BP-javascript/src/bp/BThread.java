@@ -27,11 +27,9 @@ public class BThread implements Serializable {
     private Scriptable scope;
     private ContinuationPending continuation;
     
-    // TODO CONTPOINT: replace these with the RWBStatement object!
     private RWBStatement currentRwbStatement;
     private boolean alive = true;
     private Context globalContext;
-
 
     public BThread(String name, Function func) {
         this.name = name;

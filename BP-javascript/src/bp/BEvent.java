@@ -10,39 +10,34 @@ import bp.eventsets.Requestable;
 import bp.eventsets.EventSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A base class for events
+ * A base class for events. Each event has a name, which serves as a 
+ * way of testing for equality. Events that are initialized without a name are 
+ * given unique name. 
  */
 @SuppressWarnings("serial")
-public class BEvent implements EventSet,
-        Requestable, Comparable<BEvent> {
+public class BEvent implements EventSet, Requestable, Comparable<BEvent> {
 
-    protected String _name;
+    private static final AtomicInteger INSTANCE_ID_GEN = new AtomicInteger(0);
+    
+    private final String name;
+    
     // TODO: Remove the "output Event" field. This should be done by a filter on the selected event, e.g. in a listener on the BProgram.
     protected boolean _outputEvent = false;
 
     public BEvent(String name, boolean outputEvent) {
-        _name = name;
+        this.name = name;
         _outputEvent = outputEvent;
     }
 
     public BEvent() {
-        this(null);
+        this( BEvent.class.getSimpleName() + "#" + INSTANCE_ID_GEN.incrementAndGet() );
     }
 
     public BEvent(String aName) {
         this(aName, false);
-    }
-    
-    /**
-     * Object initializer for getting a default event name, 
-     * if needed.
-     */
-    {
-        if ( _name==null ) {
-            _name = getClass().getSimpleName();
-        }
     }
     
     public boolean isOutputEvent() {
@@ -61,15 +56,11 @@ public class BEvent implements EventSet,
 
     @Override
     public String toString() {
-        return _name;
+        return name;
     }
 
     public String getName() {
-        return _name;
-    }
-
-    public void setName(String name) {
-        this._name = name;
+        return name;
     }
 
     @Override
@@ -117,19 +108,19 @@ public class BEvent implements EventSet,
         if ( ! (obj instanceof BEvent) ) return false;
         
         BEvent other = (BEvent) obj;
-        return _name.equals(other.getName());
+        return name.equals(other.getName());
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 67 * hash + Objects.hashCode(this._name);
+        hash = 67 * hash + Objects.hashCode(this.name);
         return hash;
     }
 
     @Override
     public int compareTo(BEvent e) {
-        return _name.compareTo(e.getName());
+        return name.compareTo(e.getName());
     }
 
     protected void bplog(String string) {

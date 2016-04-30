@@ -1,7 +1,7 @@
 package bp.tasks;
 
-import bp.BEvent;
-import bp.BPApplication;
+import bp.events.BEvent;
+import bp.bprogram.BProgram;
 import bp.actuation.IActuatorService;
 
 import java.util.concurrent.Callable;
@@ -11,10 +11,10 @@ import java.util.concurrent.Callable;
  */
 public class ActuationTask implements Callable<Void>, Runnable {
 
-    protected BPApplication _app;
+    protected BProgram _app;
     protected IActuatorService _actService;
 
-    public ActuationTask(BPApplication _app,
+    public ActuationTask(BProgram _app,
                          IActuatorService actuationService) {
         this._app = _app;
         _actService = actuationService;
@@ -24,8 +24,9 @@ public class ActuationTask implements Callable<Void>, Runnable {
     public Void call() throws Exception {
         System.out.println("ActuationTask started!");
         while (true) {
-            BEvent event = _app.readOutputEvent();
-            _actService.actuate(event);
+//            BEvent event = _app.readOutputEvent();
+//            _actService.actuate(event);
+// Now should add a listener to the BProgram, and make a callback when the requested event is selected,
         }
     }
 

@@ -1,7 +1,7 @@
 package bp.eventselection;
 
-import bp.BEvent;
-import bp.RWBStatement;
+import bp.events.BEvent;
+import bp.bprogram.RWBStatement;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.EventSets;
@@ -20,8 +20,6 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     @Override
     public EventSelectionResult select(Collection<RWBStatement> statements) {
         if ( statements.isEmpty() ) return EventSelectionResult.NONE_REQUESTED;
-        
-        statements.forEach( s->System.out.println(s) );
         
         Set<Requestable> requested = statements.stream()
                 .filter( stmt -> stmt!=null )

@@ -1,6 +1,6 @@
 package bp.actuation;
 
-import bp.BEvent;
+import bp.events.BEvent;
 import bp.BProgramControls;
 
 import java.util.concurrent.Callable;

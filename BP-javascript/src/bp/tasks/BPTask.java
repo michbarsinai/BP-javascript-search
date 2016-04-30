@@ -1,12 +1,12 @@
 package bp.tasks;
 
-import bp.BPApplication;
+import bp.bprogram.BProgram;
 import java.util.concurrent.Callable;
 
 import static bp.BProgramControls.debugMode;
 
 /**
- * Base class for a parallel task executed during the execution of a {@link BPApplication}.
+ * Base class for a parallel task executed during the execution of a {@link BProgram}.
  * @author moshewe
  */
 public abstract class BPTask implements Callable<Void>{

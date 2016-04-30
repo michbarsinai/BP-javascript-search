@@ -1,6 +1,6 @@
 package bp.validation.eventpattern;
 
-import bp.BEvent;
+import bp.events.BEvent;
 import bp.eventsets.EventSet;
 
 public class EventPatternPart  {

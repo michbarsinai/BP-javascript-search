@@ -1,7 +1,7 @@
 package bp.tasks;
 
-import bp.BEvent;
-import bp.BThread;
+import bp.events.BEvent;
+import bp.bprogram.BThread;
 
 /**
  * A task to resume a BThread from a BSync operation.

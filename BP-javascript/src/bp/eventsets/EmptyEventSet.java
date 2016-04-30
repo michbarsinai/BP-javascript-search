@@ -1,6 +1,6 @@
 package bp.eventsets;
 
-import bp.BEvent;
+import bp.events.BEvent;
 import bp.exceptions.BPJRequestableSetException;
 
 import java.io.Serializable;

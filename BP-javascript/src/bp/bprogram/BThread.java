@@ -1,5 +1,6 @@
-package bp;
+package bp.bprogram;
 
+import bp.events.BEvent;
 import org.mozilla.javascript.*;
 
 import javax.naming.OperationNotSupportedException;
@@ -95,7 +96,6 @@ public class BThread implements Serializable {
     public void start() {
         try {
             openGlobalContext();
-            bplog("started!");
             continuation = null;
             globalContext.callFunctionWithContinuations(entryPoint, scope, new Object[0]);
             enterZombieMode(); // If we got here, there was no bSync in the JS code.

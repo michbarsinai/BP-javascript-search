@@ -1,5 +1,6 @@
 package bp;
 
+// TODO clean this up.
 public class BProgramControls {
 
 	public static boolean suppressDeadlock = false;
@@ -18,7 +19,6 @@ public class BProgramControls {
 	public static int estimatedStates = new Integer(0);
 	public static String temp;
 	public static boolean iterativeMode = false;
-	public static boolean javaflowInstrumentation = true;
 	/**
 	 * Indicates whether this program is executed in verification mode
 	 */
@@ -27,7 +27,7 @@ public class BProgramControls {
 	 * Indicates whether this program is executed in DEBUG mode E.g. issue debug
 	 * msgs.
 	 */
-	public static boolean debugMode = true;
+	public static boolean debugMode = false;
 	/**
 	 * Indicates whether this program is executed in LOG mode E.g. issue EVENT
 	 * occurrence messages .

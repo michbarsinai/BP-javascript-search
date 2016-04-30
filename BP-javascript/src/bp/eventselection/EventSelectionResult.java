@@ -1,6 +1,6 @@
 package bp.eventselection;
 
-import bp.BEvent;
+import bp.events.BEvent;
 import java.util.Objects;
 
 /**
@@ -25,6 +25,13 @@ public abstract class EventSelectionResult {
     
     private EventSelectionResult(){
         // Prevent external subclassing.
+    }
+    
+    /**
+     * Base class for results that do not contain an event for some reason.
+     */
+    public abstract static class EmptyResult extends EventSelectionResult {
+        
     }
     
     public abstract <R> R accept( Visitor<R> v );
@@ -67,20 +74,41 @@ public abstract class EventSelectionResult {
             return Objects.equals(this.selectedEvent, other.selectedEvent);
         }
         
+        @Override
+        public String toString(){
+            return "[Selected " + selectedEvent + "]";
+        }
         
     }
     
-    public static class Deadlock extends EventSelectionResult {
+    /**
+     * No event was selected since all requested events are blocked.
+     */
+    public static class Deadlock extends EmptyResult {
         @Override
         public <R> R accept( Visitor<R> v ) {
             return v.visit( this );
         }
+        
+        @Override
+        public String toString(){
+            return "[Deadlock]";
+        }
     }
     
-    public static class NoneRequested extends EventSelectionResult {
+    
+    /**
+     * No events selected since no event was requested.
+     */
+    public static class NoneRequested extends EmptyResult {
         @Override
         public <R> R accept( Visitor<R> v ) {
             return v.visit( this );
+        }
+        
+        @Override
+        public String toString(){
+            return "[NoneRequested]";
         }
     }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import bp.BEvent;
+import bp.events.BEvent;
 
 import static bp.eventsets.EventSets.all;
 import static org.junit.Assert.*;

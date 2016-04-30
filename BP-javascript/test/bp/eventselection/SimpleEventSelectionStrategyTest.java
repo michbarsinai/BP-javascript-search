@@ -3,8 +3,8 @@
  */
 package bp.eventselection;
 
-import bp.BEvent;
-import bp.RWBStatement;
+import bp.events.BEvent;
+import bp.bprogram.RWBStatement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

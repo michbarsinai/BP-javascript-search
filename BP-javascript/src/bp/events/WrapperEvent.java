@@ -1,6 +1,5 @@
 package bp.events;
 
-import bp.BEvent;
 import java.util.Objects;
 
 /**

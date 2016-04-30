@@ -3,7 +3,7 @@ package bp.validation.eventpattern;
 import java.util.ArrayList;
 import java.util.List;
 
-import bp.BEvent;
+import bp.events.BEvent;
 import bp.eventsets.EventSet;
 
 /**

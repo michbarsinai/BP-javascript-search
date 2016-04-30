@@ -1,6 +1,6 @@
 package bp.tasks;
 
-import bp.BThread;
+import bp.bprogram.BThread;
 
 /**
  * A task to start a BThread.

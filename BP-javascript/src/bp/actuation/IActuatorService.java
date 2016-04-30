@@ -1,6 +1,6 @@
 package bp.actuation;
 
-import bp.BEvent;
+import bp.events.BEvent;
 
 /**
  * Created by orelmosheweinstock on 7/31/15.

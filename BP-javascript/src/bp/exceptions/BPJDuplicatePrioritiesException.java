@@ -1,6 +1,6 @@
 package bp.exceptions;
 
-import bp.BThread;
+import bp.bprogram.BThread;
 
 @SuppressWarnings("serial")
 public class BPJDuplicatePrioritiesException extends BPJException {

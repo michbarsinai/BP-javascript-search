@@ -1,4 +1,4 @@
-package bp;
+package bp.events;
 
 import bp.exceptions.BPJRequestableSetException;
 

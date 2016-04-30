@@ -1,6 +1,6 @@
 package bp.eventselection;
 
-import bp.RWBStatement;
+import bp.bprogram.RWBStatement;
 import java.util.Collection;
 
 /**

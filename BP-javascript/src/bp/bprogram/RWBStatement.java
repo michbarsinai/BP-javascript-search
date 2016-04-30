@@ -1,5 +1,6 @@
-package bp;
+package bp.bprogram;
 
+import bp.events.BEvent;
 import static bp.eventsets.EventSets.none;
 import java.util.Objects;
 import bp.eventsets.Requestable;

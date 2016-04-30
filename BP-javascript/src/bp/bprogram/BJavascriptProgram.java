@@ -1,5 +1,6 @@
-package bp;
+package bp.bprogram;
 
+import bp.BProgramControls;
 import org.mozilla.javascript.*;
 
 import java.io.BufferedReader;
@@ -12,16 +13,14 @@ import static bp.eventsets.EventSets.all;
 import static bp.eventsets.EventSets.none;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
 
 /**
  * @author orelmosheweinstock 
  * @author Michael
  */
-public abstract class BJavascriptProgram extends BPApplication {
+public abstract class BJavascriptProgram extends BProgram {
 
     public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
-    protected Arbiter _arbiter;
 
     private Scriptable _globalScope;
     
@@ -121,9 +120,16 @@ public abstract class BJavascriptProgram extends BPApplication {
 
     @Override
     public void start() throws InterruptedException {
+        setup();
+        super.start();
+    }
+    
+    /**
+     * Sets up internal data structures for running.
+     */
+    public void setup() {
         setupGlobalScope();
         setupBThreadScopes();
-        super.start();
     }
     
     protected void setupBThreadScopes() {

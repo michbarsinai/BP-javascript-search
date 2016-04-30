@@ -1,20 +1,19 @@
 package bp.tasks;
 
-import bp.BEvent;
 import bp.BThread;
 
 /**
- * Created by moshewe on 06/07/2015.
+ * A task to start a BThread.
  */
 public class StartBThread extends BPTask {
-    private BThread _bt;
+    private final BThread bthread;
 
-    public StartBThread(BThread _bt) {
-        this._bt = _bt;
+    public StartBThread(BThread aBThread) {
+        bthread = aBThread;
     }
 
     @Override
-    public void run() {
-        _bt.start();
+    protected void run() {
+        bthread.start();
     }
 }

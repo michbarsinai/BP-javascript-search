@@ -24,26 +24,14 @@ public class BEvent implements EventSet, Requestable, Comparable<BEvent> {
     
     private final String name;
     
-    // TODO: Remove the "output Event" field. This should be done by a filter on the selected event, e.g. in a listener on the BProgram.
-    protected boolean _outputEvent = false;
-
-    public BEvent(String name, boolean outputEvent) {
+    public BEvent(String name) {
         this.name = name;
-        _outputEvent = outputEvent;
     }
 
     public BEvent() {
         this( BEvent.class.getSimpleName() + "#" + INSTANCE_ID_GEN.incrementAndGet() );
     }
-
-    public BEvent(String aName) {
-        this(aName, false);
-    }
     
-    public boolean isOutputEvent() {
-        return _outputEvent;
-    }
-
     @Override
     public boolean contains(Object o) {
         return equals(o);

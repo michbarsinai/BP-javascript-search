@@ -6,11 +6,16 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static bp.BProgramControls.debugMode;
+import bp.eventselection.EventSelectionResult;
+import bp.eventselection.EventSelectionResult.Selected;
+import bp.eventselection.EventSelectionStrategy;
+import bp.eventselection.SimpleEventSelectionStrategy;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSets;
 import java.util.stream.Collectors;
 import bp.eventsets.Requestable;
 import bp.eventsets.EventSet;
+import static java.util.stream.Collectors.toList;
 
 public abstract class BPApplication  {
 
@@ -24,9 +29,9 @@ public abstract class BPApplication  {
     
     /**
      * Stores the strings of the events that occurred in this run
-     * TODO remove, replace with a logger BThread.
+     * TODO remove, replace with a listener/logger.
      */
-    public transient Deque<BEvent> eventLog = new LinkedList<>();
+    public transient LinkedList<BEvent> eventLog = new LinkedList<>();
     
     /**
      * Program name is set to be the simple class name by default.
@@ -38,10 +43,10 @@ public abstract class BPApplication  {
     protected ExecutorService executor;
     
     // TODO probably replace with a full enum of PRE_RUN, IN_STEP, IDLE.
-    private boolean started = false;
+    private volatile boolean started = false;
 
     public BPApplication() {
-        this(null);
+        this( BPApplication.class.getSimpleName());
     }
     
     public BPApplication( String aName ) {
@@ -56,24 +61,6 @@ public abstract class BPApplication  {
         inputEventQueue = new LinkedBlockingQueue<>();
         outputEventQueue = new LinkedBlockingQueue<>();
         executor = new ForkJoinPool();
-    }
-    
-    /**
-     * Set fields unset by constructors of this class or its subclasses.
-     */
-    {
-        if ( getName() == null ) {
-            setName( this.getClass().getSimpleName() );
-        }
-    }
-    
-    public void bplog(String string) {
-        if (debugMode)
-            System.out.println("[" + this + "]: " + string);
-    }
-
-    public Set<BThread> getBThreads() {
-        return bthreads;
     }
 
     /**
@@ -101,13 +88,6 @@ public abstract class BPApplication  {
     }
 
     /**
-     * @return the given bprogram's _name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
      * A function that checks if an event is blocked by some b-thread.
      *
      * @param e An event.
@@ -119,55 +99,7 @@ public abstract class BPApplication  {
     }
 
     /**
-     * Utility function (for debugging purposes) that prints the ordered list of
-     * active be-threads.
-     */
-    public void printAllBThreads() {
-        int c = 0;
-        for (BThread bt : getBThreads()) {
-            bplog("\t" + (c++) + ":" + bt);
-        }
-    }
-
-    public void printEventLog() {
-
-        System.out.println("\n ***** Printing last " + eventLog.size()
-                + " choice points out of " + eventLog.size() + ":");
-
-        for (BEvent ev : eventLog)
-            System.out.println(ev);
-
-        System.out.println("***** end event bplog ******");
-    }
-
-    public void setDebugMode(boolean mode) {
-        // TODO implement?
-    }
-
-    /**
-     * Sets the error that occurred during the run, to make BPApplication terminate
-     * at the next bSync and print the error.
-     *
-     * @param error An Object of the error occurred during the run - better have
-     *              an informative toString().
-     */
-    public static void setError(Object error) {
-        // TODO implement?
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    /**
-     * Get all waited-for events when program is idle
-     *
-     * @return
+     * @return all waited-for events when program is idle
      */
     public Collection<EventSet> getWatchedEventSets() {
         Collection<EventSet> ret = new ArrayList<>();
@@ -178,7 +110,7 @@ public abstract class BPApplication  {
     }
 
     /**
-     * Get all events that are requested but blocked when program is idle
+     * @return all events that are requested but blocked when program is idle
      */
     public Collection<BEvent> getRequestedBlockedEvents() {
         Collection<BEvent> blocked = new ArrayList<>();
@@ -200,62 +132,80 @@ public abstract class BPApplication  {
     }
 
     public void bthreadCleanup() {
-        for (Iterator<BThread> it = bthreads.iterator();
-             it.hasNext(); ) {
+        for (Iterator<BThread> it = bthreads.iterator(); it.hasNext(); ) {
             BThread bt = it.next();
             if (!bt.isAlive()) {
+                bplog("-- Removing Bthread " + bt.getName() );
                 it.remove();
             }
         }
     }
-
+    
     /**
-     * Used by arbiters to notify programs of events triggered.
-     *
-     * @param lastEvent
+     * Advances the BProgram a single super-step, that is until there are 
+     * no more internal events that can be selected.
+     * 
+     * @throws InterruptedException
+     * @return The reason the super-step terminated.
      */
-    public void triggerEvent(BEvent lastEvent) {
-        String st;
-        if (lastEvent != null) {
-            eventLog.add(lastEvent);
-            st = "Event #" + eventLog.size() + ": " + getLastEvent();
-            bplog(st);
-            bplog(">> starting bthread wakeup");
-            // Interrupt and notify the be-threads that need to be
-            // awaken
-            Collection<ResumeBThread> resumes
-                    = new LinkedList<>();
-            for (BThread bt : bthreads) {
-                resumes.add(new ResumeBThread(bt, lastEvent));
-            }
-            List<Future<Void>> futures = null;
-            try {
-                futures = executor.invokeAll(resumes);
-                for (Future future : futures) {
-                    future.get();
-                }
-            } catch (InterruptedException e) {
-                bplog("INVOKING BTHREAD RESUMES INTERRUPTED");
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                bplog("EXCEPTION WHILE EXECUTING BTHREAD");
-                e.printStackTrace();
-            }
-            bplog("<< finished bthread wakeup");
-        } else { // lastEvent == null -> deadlock?
-            st = "No events chosen. Waiting for external event or stuck in bsync...?";
-            bplog(st);
+    public EventSelectionResult superStep() throws InterruptedException {
+        
+        EventSelectionStrategy ess = new SimpleEventSelectionStrategy();
+        
+        executor.invokeAll( bthreads.stream()
+                                .map( bt-> new StartBThread(bt) )
+                                .collect(toList()) );
+        
+        bthreadCleanup();
+        EventSelectionResult esr = ess.select(currentStatements());    
+        while( esr instanceof Selected  ) {
+            BEvent selectedEvent = ((Selected)esr).getEvent();
+            triggerEvent(selectedEvent);
+            bthreadCleanup();
+            esr = ess.select(currentStatements());
         }
+        return esr;
     }
-
-    public BEvent getLastEvent() {
-        return eventLog.peekLast();
+    
+    private Collection<RWBStatement> currentStatements() { 
+        return bthreads.stream()
+                .map( BThread::getCurrentRwbStatement )
+                .collect( toList() );
     }
-
-    public Arbiter getArbiter() {
-        return arbiter;
+    
+    public void start() throws InterruptedException {
+        bplog("********* Starting " + bthreads.size()
+                + " scenarios  **************");
+        started = true;
+        executor.invokeAll( 
+            bthreads.stream()
+                    .map( bt-> new StartBThread(bt) )
+                    .collect(toList()) );
+        bplog("********* " + bthreads.size()
+                + " scenarios started **************");
+        executor.submit(new EventLoopTask(this, arbiter));
     }
-
+    
+    /**
+     * Awakens BThreads that waited for/requested this event in their last bsync,
+     * and waits for them to terminate.
+     * 
+     * @param anEvent The event to trigger. Cannot be {@code null}.
+     */
+    public void triggerEvent(BEvent anEvent) throws InterruptedException {
+        if ( anEvent == null ) {
+            throw new IllegalArgumentException("Cannot trigger a null event.");
+        }
+        
+        eventLog.add(anEvent); // TODO replace with listener notification
+        bplog("Event #" + eventLog.size() + ": " + anEvent);
+        Collection<ResumeBThread> resumes = bthreads.stream()
+                .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
+                .map( bt->new ResumeBThread(bt, anEvent) )
+                .collect( toList() );            
+        executor.invokeAll(resumes);
+    }
+    
     public void add(Collection<BThread> bts) {
         bthreads.addAll(bts);
     }
@@ -263,18 +213,29 @@ public abstract class BPApplication  {
     public void add(BThread bt) {
         bthreads.add(bt);
     }
-
+    
+    public void registerBThread(BThread bt) {
+        add(bt);
+        if (started) {
+            executor.submit(new StartBThread(bt));
+        }
+    }
+    
+    public void emit(BEvent e) {
+        bplog("emitted " + e);
+        outputEventQueue.add(e);
+    }
+    
     /**
      * a method that sends events as input for the application
      *
      * @param e
      */
-    public void fire(BEvent e) {
-//        bplog(e + " fired!");
+    public void enququeExternalEvent(BEvent e) {
         inputEventQueue.add(e);
     }
-
-    public BEvent getInputEvent() {
+    
+    public BEvent dequeueExternalEvent() {
         BEvent e = null;
         try {
             e = inputEventQueue.take();
@@ -287,43 +248,72 @@ public abstract class BPApplication  {
         return e;
     }
 
-    public void emit(BEvent e) {
-        bplog("emitted " + e);
-        outputEventQueue.add(e);
-    }
-
     public BEvent readOutputEvent() throws InterruptedException {
-        BEvent take = outputEventQueue.take();
-        return take;
+        return outputEventQueue.take();
     }
 
-    public void start() throws InterruptedException {
-        bplog("********* Starting " + bthreads.size()
-                + " scenarios  **************");
-
-        Collection<StartBThread> startBtTasks = new ArrayList<>(bthreads.size());
-        bthreads.stream().map( bt-> new StartBThread(bt) )
-                          .forEach( startBtTasks::add );
-        
-        executor.invokeAll(startBtTasks);
-        bplog("********* " + bthreads.size()
-                + " scenarios started **************");
-        started = true;
-        executor.execute(new EventLoopTask(this, arbiter));
-    }
-
-    public void registerBThread(BThread bt) {
-        add(bt);
-        if (started) {
-            executor.execute(new StartBThread(bt));
-        }
-    }
-    
-    
     public void setArbiter(Arbiter arbiter) {
         this.arbiter = arbiter;
         arbiter.setProgram(this);
     }
+    
+    public void bplog(String string) {
+        if (debugMode)
+            System.out.println("[" + this + "]: " + string);
+    }
 
+    public Set<BThread> getBThreads() {
+        return bthreads;
+    }
 
+    public BEvent getLastEvent() {
+        return eventLog.peekLast();
+    }
+
+    public Arbiter getArbiter() {
+        return arbiter;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    /**
+     * @return the given bprogram's _name
+     */
+    public String getName() {
+        return name;
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    
+    ////////////////////////////////////////////////////////////////////////////
+    /// Debugging Stuff.
+    
+    /**
+     * Utility function (for debugging purposes) that prints the ordered list of
+     * active be-threads.
+     */
+    public void printAllBThreads() {
+        int c = 0;
+        for (BThread bt : getBThreads()) {
+            bplog("\t" + (c++) + ":" + bt);
+        }
+    }
+
+    public void printEventLog() {
+
+        System.out.println("\n ***** Printing last " + eventLog.size()
+                + " choice points out of " + eventLog.size() + ":");
+
+        for (BEvent ev : eventLog)
+            System.out.println(ev);
+
+        System.out.println("***** end event bplog ******");
+    }
+    
 }

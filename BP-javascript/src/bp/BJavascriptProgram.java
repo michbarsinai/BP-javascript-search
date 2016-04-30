@@ -12,6 +12,7 @@ import static bp.eventsets.EventSets.all;
 import static bp.eventsets.EventSets.none;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
 
 /**
  * @author orelmosheweinstock 
@@ -126,9 +127,9 @@ public abstract class BJavascriptProgram extends BPApplication {
     }
     
     protected void setupBThreadScopes() {
-        Context cx = ContextFactory.getGlobal().enterContext();
-        cx.setOptimizationLevel(-1); // must use interpreter mode
         try {
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
             bthreads.forEach( bt -> bt.setupScope(_globalScope) );
         } finally {
             Context.exit();

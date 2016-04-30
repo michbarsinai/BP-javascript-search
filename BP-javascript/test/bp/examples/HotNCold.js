@@ -14,7 +14,7 @@ bpjs.registerBThread("ColdBt", function () {
 
 bpjs.registerBThread("AlternatorBt", function () {
     for (i = 0; i < 3; i++) {
-        bsync(none, coldEvent, hotEvent);
+        bsync(none, coldEvent, hotEvent); // block hot first, so as not to burn our thumb.
         bsync(none, hotEvent, coldEvent);
     }
     bsync(allDone, none, none);

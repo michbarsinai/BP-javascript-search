@@ -3,10 +3,12 @@ package bp.examples;
 import bp.Arbiter;
 import bp.BEvent;
 import bp.BJavascriptProgram;
+import bp.validation.eventpattern.EventPattern;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
 
 import java.util.Arrays;
+import static org.junit.Assert.assertTrue;
 import org.mozilla.javascript.Scriptable;
 
 /**
@@ -15,9 +17,9 @@ import org.mozilla.javascript.Scriptable;
  */
 public class HotNColdTest extends BJavascriptProgram {
     
-    final BEvent hotEvent = new BEvent("hotEvent", true);
-    final BEvent coldEvent = new BEvent("coldEvent", true);
-    final BEvent allDoneEvent = new BEvent("allDone", true);
+    final BEvent hotEvent = new BEvent("hotEvent");
+    final BEvent coldEvent = new BEvent("coldEvent");
+    final BEvent allDoneEvent = new BEvent("allDone");
 
     public HotNColdTest() {
         super("HotNCold");
@@ -26,11 +28,23 @@ public class HotNColdTest extends BJavascriptProgram {
     }
 
     @Test
+    public void superStepTest() throws InterruptedException {
+        setupGlobalScope();
+        setupBThreadScopes();
+        superStep();
+        
+        EventPattern expected = new EventPattern().append(coldEvent).append(hotEvent)
+                .append(coldEvent).append(hotEvent)
+                .append(coldEvent).append(hotEvent)
+                .append(allDoneEvent);
+        assertTrue( expected.matches(eventLog) );
+    }
+    
     public void hotNColdTest() throws InterruptedException {
         final HotNColdTest hnc = new HotNColdTest();
         hnc.start();
         System.out.println("starting output event read loop");
-
+ 
         BEvent outputEvent = hnc.readOutputEvent();
         while (! outputEvent.equals(allDoneEvent) ) {
             System.out.println("program emitted " + outputEvent);

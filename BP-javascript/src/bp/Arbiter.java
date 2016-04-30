@@ -36,15 +36,15 @@ public class Arbiter {
     }
 
     /**
-     * Choose the next event to be fired. Notifies the _app which thread
-     * asked for it.
+     * Choose the next event to be fired, from the events offered by
+     * {@link #_app}'s {@link BThread}s.
      *
+     * @return an event to be triggered, or {@code null} if no event can be selected.
      * @throws BPJRequestableSetException
      */
     public BEvent nextEvent() {
         BEvent ec = selectEventFromProgram();
         bplog("Event chosen from program is " + ec);
-        // if no internal event was selected, wait for an external event
         return ec;
 
     }
@@ -52,10 +52,6 @@ public class Arbiter {
     protected BEvent selectEventFromProgram() {
         Set<BEvent> legals = _app.requestedAndNotBlockedEvents();
         Iterator<BEvent> it = legals.iterator();
-        if (it.hasNext()) {
-            return it.next();
-        } else {
-            return null;
-        }
+        return it.hasNext() ? it.next() : null;
     }
 }

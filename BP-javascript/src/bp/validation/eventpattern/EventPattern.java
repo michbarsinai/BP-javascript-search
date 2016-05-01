@@ -5,6 +5,7 @@ import java.util.List;
 
 import bp.events.BEvent;
 import bp.eventsets.EventSet;
+import bp.eventsets.ExplicitEventSet;
 
 /**
  * Matches a list of events against a glob-like pattern.
@@ -70,6 +71,9 @@ public class EventPattern {
 	public EventPattern append( EventSet esi ) {
 		return append( esi, 1, 1);
 	}
+	public EventPattern append( BEvent evt ) {
+        return append( ExplicitEventSet.of(evt) );
+    }
 	
 	/**
 	 * Appends a zero-or-more occurrence of {@code esi} to the pattern.
@@ -84,6 +88,10 @@ public class EventPattern {
 		return append( esi, 0, null );
 	}
 	
+    public EventPattern appendStar( BEvent evt ) {
+        return appendStar( ExplicitEventSet.of(evt) );
+    }
+    
 	/**
 	 * Appends possible occurrence(s) of {@code esi} to the pattern.
 	 * 
@@ -97,6 +105,10 @@ public class EventPattern {
 		return this;
 	}
 	
+    public EventPattern append( BEvent evt, int minRepeats, Integer maxRepeats ) {
+        return append( ExplicitEventSet.of(evt), minRepeats, maxRepeats );
+    }
+    
 	/**
 	 * Clears the pattern.
 	 */

@@ -20,7 +20,6 @@ public class SimpleEventSelectionStrategyTest {
     
     private final BEvent eventOne = new BEvent("one");
     private final BEvent eventTwo = new BEvent("two");
-    private final BEvent eventThr = new BEvent("three");
     
     private SimpleEventSelectionStrategy sut;
     

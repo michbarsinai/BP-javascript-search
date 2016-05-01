@@ -125,6 +125,11 @@ public abstract class BProgram  {
             throw new IllegalArgumentException("Cannot trigger a null event.");
         }        
         listeners.forEach( l->l.eventSelected(this, anEvent) );
+        
+        bthreads.forEach( bt -> {if (bt.getCurrentRwbStatement()==null) {
+            System.out.println(bt.getName() + " Has null stmt");
+        }});
+        
         Collection<ResumeBThread> resumes = bthreads.stream()
                 .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
                 .map( bt->new ResumeBThread(bt, anEvent) )

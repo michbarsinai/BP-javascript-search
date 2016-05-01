@@ -1,6 +1,7 @@
 package bp.bprogram;
 
 import bp.BProgramControls;
+import bp.eventsets.EventSets;
 import org.mozilla.javascript.*;
 
 import java.io.BufferedReader;
@@ -10,8 +11,11 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 
 import static bp.eventsets.EventSets.all;
-import static bp.eventsets.EventSets.none;
 import static java.nio.file.Files.readAllBytes;
+import static bp.eventsets.EventSets.emptySet;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
+import static java.nio.file.Paths.get;
 import static java.nio.file.Paths.get;
 
 /**
@@ -22,7 +26,7 @@ public abstract class BJavascriptProgram extends BProgram {
 
     public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
 
-    private Scriptable _globalScope;
+    private Scriptable globalScope;
     
     public BJavascriptProgram() {
         super();
@@ -75,12 +79,12 @@ public abstract class BJavascriptProgram extends BProgram {
     }
 
     public Object evaluateInGlobalScope(String path) {
-        return evaluateInGlobalContext(_globalScope, path);
+        return evaluateInGlobalContext(globalScope, path);
     }
 
     public Object evaluateInGlobalScope(InputStream ios,
                                         String scriptname) {
-        return evaluateInGlobalContext(_globalScope, ios, scriptname);
+        return evaluateInGlobalContext(globalScope, ios, scriptname);
     }
 
     public Object evaluateInGlobalScope(String path,
@@ -136,7 +140,7 @@ public abstract class BJavascriptProgram extends BProgram {
         try {
             Context cx = ContextFactory.getGlobal().enterContext();
             cx.setOptimizationLevel(-1); // must use interpreter mode
-            bthreads.forEach( bt -> bt.setupScope(_globalScope) );
+            bthreads.forEach(bt -> bt.setupScope(globalScope) );
         } finally {
             Context.exit();
         }
@@ -148,13 +152,15 @@ public abstract class BJavascriptProgram extends BProgram {
         try (InputStream script =
                     BJavascriptProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
-            _globalScope = cx.initStandardObjects(importer);
-            _globalScope.put("bpjs", _globalScope,
-                    Context.javaToJS(this, _globalScope));
-            _globalScope.put("none", _globalScope,
-                    Context.javaToJS(none, _globalScope));
-            _globalScope.put("all", _globalScope,
-                    Context.javaToJS(all, _globalScope));
+            globalScope = cx.initStandardObjects(importer);
+            globalScope.put("bpjs", globalScope,
+                    Context.javaToJS(this, globalScope));
+            globalScope.put("emptySet", globalScope,
+                    Context.javaToJS(emptySet, globalScope));
+            globalScope.put("noEvents", globalScope,
+                    Context.javaToJS(EventSets.noEvents, globalScope));
+            globalScope.put("all", globalScope,
+                    Context.javaToJS(all, globalScope));
             
             evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
             
@@ -188,15 +194,15 @@ public abstract class BJavascriptProgram extends BProgram {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1); // must use interpreter mode
         try {
-            _globalScope.put(objName, _globalScope,
-                    Context.javaToJS(obj, _globalScope));
+            globalScope.put(objName, globalScope,
+                    Context.javaToJS(obj, globalScope));
         } finally {
             Context.exit();
         }
     }
     
     public Scriptable getGlobalScope() {
-        return _globalScope;
+        return globalScope;
     }
 }
 

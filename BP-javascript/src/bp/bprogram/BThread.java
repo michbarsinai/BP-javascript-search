@@ -3,14 +3,13 @@ package bp.bprogram;
 import bp.events.BEvent;
 import org.mozilla.javascript.*;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.InputStream;
 import java.io.Serializable;
 
 import static bp.BProgramControls.debugMode;
-import bp.eventsets.Requestable;
 import bp.eventsets.EventSet;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * A Javascript BThread wrapper. 
@@ -70,17 +69,18 @@ public class BThread implements Serializable {
         InputStream script;
         Scriptable btThisScope = (Scriptable) Context.javaToJS(this, programScope);
         btThisScope.setPrototype(programScope);
-        script = BThread.class.getResourceAsStream("highlevelidioms/breakupon.js");
-        tScope = generateSubScope(btThisScope, script, "breakupon");
-        try {
-            script.close();
-            script = BThread.class.getResourceAsStream("highlevelidioms/whileblocking.js");
-            tScope = generateSubScope(tScope, script, "whileblocking");
-            script.close();
-        } catch (IOException ex) {
-            throw new RuntimeException("Error closing input stream of internal JS files: " + ex.getMessage());
-        }
-        return tScope;
+        btThisScope.put("bt", btThisScope, (Scriptable) Context.javaToJS(this, programScope) );
+        return btThisScope;
+//        script = BThread.class.getResourceAsStream("highlevelidioms/breakupon.js");
+//        tScope = generateSubScope(btThisScope, script, "breakupon");
+//        try {
+//            script.close();
+//            script = BThread.class.getResourceAsStream("highlevelidioms/whileblocking.js");
+//            tScope = generateSubScope(tScope, script, "whileblocking");
+//            script.close();
+//        } catch (IOException ex) {
+//            throw new RuntimeException("Error closing input stream of internal JS files: " + ex.getMessage());
+//        }
     }
 
     public Scriptable generateSubScope(Scriptable scope, InputStream ios,
@@ -139,14 +139,18 @@ public class BThread implements Serializable {
         return null;
     }
 
-    // TODO what is this?
-    public BEvent bsync(Object obj1, EventSet waitedEvents,
-                        EventSet blockedEvents) throws OperationNotSupportedException {
-        String explanation = "requestedEvents not of type " +
-                "RequestableInterface not supported.";
-        throw new OperationNotSupportedException(explanation);
+    public void testCall( Object o ) {
+        System.out.println("Test call:" + o);
     }
-
+    
+    public void bsync( RWBStatement aStatement ) {
+        System.out.println("bsyncing with " + aStatement);
+        currentRwbStatement = aStatement;
+        openGlobalContext();
+        ContinuationPending capturedContinuation = globalContext.captureContinuation();
+        closeGlobalContext();
+        throw capturedContinuation;
+    }
     /**
      * BSync call, used by the JS programs. Works as follows:
      * <ol>
@@ -159,18 +163,21 @@ public class BThread implements Serializable {
      * @param waitedEvents
      * @param blockedEvents
      */
-    public void bsync(Requestable requestedEvents,
-                        EventSet waitedEvents,
-                        EventSet blockedEvents) {
-        currentRwbStatement = RWBStatement.make().request(requestedEvents)
-                                                .waitFor(waitedEvents)
-                                                .block(blockedEvents);
-        bplog("bsyncing with " + requestedEvents + ", " +
-                waitedEvents + ", " + blockedEvents);
-        openGlobalContext();
-        ContinuationPending capturedContinuation = globalContext.captureContinuation();
-        closeGlobalContext();
-        throw capturedContinuation;
+    public void bsync(Set<? extends BEvent> requestedEvents,
+                      EventSet waitedEvents,
+                      EventSet blockedEvents) {
+        System.err.println("sync coll" + requestedEvents);
+        bsync( RWBStatement.make().request(requestedEvents)
+                                  .waitFor(waitedEvents)
+                                  .block(blockedEvents) );
+    }
+    
+    public void bsync(BEvent aRequestedEvent,
+                      EventSet waitedEvents,
+                      EventSet blockedEvents) {
+        bsync( RWBStatement.make().request(aRequestedEvent)
+                                  .waitFor(waitedEvents)
+                                  .block(waitedEvents));
     }
     
     private void closeGlobalContext() {

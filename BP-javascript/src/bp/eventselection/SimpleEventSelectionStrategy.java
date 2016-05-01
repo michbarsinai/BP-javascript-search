@@ -5,7 +5,6 @@ import bp.bprogram.RWBStatement;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.EventSets;
-import bp.eventsets.Requestable;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,10 +20,9 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     public EventSelectionResult select(Collection<RWBStatement> statements) {
         if ( statements.isEmpty() ) return EventSelectionResult.NONE_REQUESTED;
         
-        Set<Requestable> requested = statements.stream()
+        Set<BEvent> requested = statements.stream()
                 .filter( stmt -> stmt!=null )
-                .map( RWBStatement::getRequest )
-                .filter( r -> r != EventSets.none )
+                .flatMap( stmt -> stmt.getRequest().stream() )
                 .collect( Collectors.toSet() );
         
         if ( requested.isEmpty() ) return EventSelectionResult.NONE_REQUESTED;
@@ -33,10 +31,10 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 statements.stream()
                 .filter( stmt -> stmt!=null )
                 .map( RWBStatement::getBlock )
-                .filter( r -> r != EventSets.none )
+                .filter( r -> r != EventSets.emptySet )
                 .collect( Collectors.toSet() ) );
         
-        Set<Requestable> requestedAndNotBlocked = requested.stream()
+        Set<BEvent> requestedAndNotBlocked = requested.stream()
                 .filter( req -> !blocked.contains(req) ).collect( Collectors.toSet() );
         
         return requestedAndNotBlocked.isEmpty() ?

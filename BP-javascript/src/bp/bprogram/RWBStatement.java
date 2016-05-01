@@ -1,10 +1,14 @@
 package bp.bprogram;
 
 import bp.events.BEvent;
-import static bp.eventsets.EventSets.none;
 import java.util.Objects;
-import bp.eventsets.Requestable;
 import bp.eventsets.EventSet;
+import bp.eventsets.ExplicitEventSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import static bp.eventsets.EventSets.emptySet;
 
 /**
  * A statement a BTHread makes about what events it requests, waits for, and blocks.
@@ -17,7 +21,7 @@ public class RWBStatement {
     /**
      * The event requested by this statement
      */
-    private final Requestable request;
+    private final Set<BEvent> request;
     
     /**
      * The events waited for (wake thread up when these happen).
@@ -43,18 +47,18 @@ public class RWBStatement {
      * @return an empty statement
      */
     public static RWBStatement make() {
-        return new RWBStatement(none, none, none, none);
+        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet);
     }
     
-    public RWBStatement(Requestable request, EventSet waitFor, EventSet block, EventSet except) {
-        this.request = request;
+    public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block, EventSet except) {
+        this.request = new HashSet<>(request);
         this.waitFor = waitFor;
         this.block = block;
         this.except = except;
     }
 
-    public RWBStatement(Requestable request, EventSet waitFor, EventSet block) {
-        this( request, waitFor, block, none);
+    public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block) {
+        this(request, waitFor, block, emptySet);
     }
     
     public boolean shouldWakeFor( BEvent anEvent ) {
@@ -67,32 +71,31 @@ public class RWBStatement {
      * @param toRequest the request part of the new statement
      * @return a new statement
      */
-    public RWBStatement request( Requestable toRequest ) {
+    public RWBStatement request( Collection<? extends BEvent> toRequest ) {
         return new RWBStatement(toRequest, getWaitFor(), getBlock(), getExcept());
     }
+    public RWBStatement request( BEvent requestedEvent ) {
+        Set<BEvent> toRequest = new HashSet<>();
+        toRequest.add(requestedEvent);
+        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getExcept());
+    }
+    public RWBStatement request( ExplicitEventSet ees ) {
+        return new RWBStatement(ees.getCollection(), getWaitFor(), getBlock(), getExcept());
+    }
     
-    /**
-     * @see #request
-     */
     public RWBStatement waitFor( EventSet events ) {
         return new RWBStatement(getRequest(), events, getBlock(), getExcept());
     }
-    
-    /**
-     * @see #request
-     */
+
     public RWBStatement block( EventSet events ) {
         return new RWBStatement(getRequest(), getWaitFor(), events, getExcept());
     }
     
-    /**
-     * @see #request
-     */
     public RWBStatement except( EventSet events ) {
         return new RWBStatement(getRequest(), getWaitFor(), getBlock(), events);
     }
     
-    public Requestable getRequest() {
+    public Collection<BEvent> getRequest() {
         return request;
     }
 
@@ -144,6 +147,4 @@ public class RWBStatement {
         return Objects.equals(this.getExcept(), other.getExcept());
     }
     
-    
-   
 }

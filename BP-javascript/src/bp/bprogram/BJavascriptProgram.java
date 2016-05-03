@@ -1,6 +1,7 @@
 package bp.bprogram;
 
 import bp.BProgramControls;
+import bp.events.BEvent;
 import bp.eventsets.EventSets;
 import org.mozilla.javascript.*;
 
@@ -14,11 +15,10 @@ import static bp.eventsets.EventSets.all;
 import static java.nio.file.Files.readAllBytes;
 import static bp.eventsets.EventSets.emptySet;
 import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
+import java.util.Arrays;
 
 /**
+ * TODO (maybe) merge with BProgram - the BThreads assume Javascript anyway, so no point in splitting BProgram.
  * @author orelmosheweinstock 
  * @author Michael
  */
@@ -95,7 +95,17 @@ public abstract class BJavascriptProgram extends BProgram {
             throw new RuntimeException("Error reading javascript file '" + path + "'", iox);
         }
     }
-
+    
+    /**
+     * Convenience method to register event in the program's context. Event names are used
+     * as their Javascript name.
+     * @param events The events to register.
+     */
+    protected void registerEvents( BEvent... events ) {
+        Arrays.asList(events).forEach(
+                        e -> globalScope.put( e.getName(), globalScope, Context.javaToJS(e, globalScope)));            
+    }
+    
     /**
      * Called from JS to add BThreads running func as their
      * runnable code.
@@ -105,17 +115,22 @@ public abstract class BJavascriptProgram extends BProgram {
      * @return
      */
     public BThread registerBThread(String name, Function func) {
-        Context cx = ContextFactory.getGlobal().enterContext();
-        cx.setOptimizationLevel(-1); // must use interpreter mode
+        BThread bt = new BThread(name, func);
+        super.registerBThread(bt);
+        return bt;
+    }
+    
+    @Override
+    protected void setupAddedBThread( BThread bt ) {
         try {
-            BThread bt = new BThread(name, func);
-            super.registerBThread(bt);
-            return bt;
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
+            bt.setupScope(globalScope);
         } finally {
             Context.exit();
         }
     }
-
+    
     @Override
     public void bplog(String s) {
         if (BProgramControls.debugMode)

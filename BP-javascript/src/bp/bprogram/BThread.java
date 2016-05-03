@@ -8,11 +8,10 @@ import java.io.Serializable;
 
 import static bp.BProgramControls.debugMode;
 import bp.eventsets.EventSet;
-import java.io.IOException;
 import java.util.Set;
 
 /**
- * A Javascript BThread wrapper. 
+ * A Javascript BThread (NOT a Java thread!). 
  * 
  * @author orelmosheweinstock
  * @author Michael
@@ -46,41 +45,20 @@ public class BThread implements Serializable {
 
     public void bplog(String string) {
         if (debugMode)
-            System.out.println(this + ": " + string);
+            System.out.println(getName() + ": " + string);
     }
 
     public void setupScope(Scriptable programScope) {
-        scope = generateBThreadScope(programScope);
-        if (entryPoint != null) {
-            Scriptable funcScope = entryPoint.getParentScope();
-            if (funcScope != programScope) {
-                while (funcScope.getParentScope() != programScope) {
-                    funcScope = funcScope.getParentScope();
-                }
-                funcScope.setParentScope(scope);
-            } else {
-                entryPoint.setParentScope(scope);
-            }
-        }
-    }
-
-    protected Scriptable generateBThreadScope(Scriptable programScope) {
-        Scriptable tScope;
-        InputStream script;
-        Scriptable btThisScope = (Scriptable) Context.javaToJS(this, programScope);
-        btThisScope.setPrototype(programScope);
-        btThisScope.put("bt", btThisScope, (Scriptable) Context.javaToJS(this, programScope) );
-        return btThisScope;
-//        script = BThread.class.getResourceAsStream("highlevelidioms/breakupon.js");
-//        tScope = generateSubScope(btThisScope, script, "breakupon");
-//        try {
-//            script.close();
-//            script = BThread.class.getResourceAsStream("highlevelidioms/whileblocking.js");
-//            tScope = generateSubScope(tScope, script, "whileblocking");
-//            script.close();
-//        } catch (IOException ex) {
-//            throw new RuntimeException("Error closing input stream of internal JS files: " + ex.getMessage());
-//        }
+        scope = (Scriptable) Context.javaToJS(this, programScope);
+        scope.setPrototype(programScope);
+        scope.put("bt", scope, (Scriptable) Context.javaToJS(this, programScope) );
+        
+        // This is a break from JS's semantics, but we have to do it.
+        // In JS, inner functions know about variables in their syntactical parents.
+        // For BThread functions we break this, and make them a top-level scope. This
+        // works for us since the only communication between BThreads is via events,
+        // so in particular they can't share variables.
+        entryPoint.setParentScope(scope);
     }
 
     public Scriptable generateSubScope(Scriptable scope, InputStream ios,
@@ -98,10 +76,16 @@ public class BThread implements Serializable {
             openGlobalContext();
             continuation = null;
             globalContext.callFunctionWithContinuations(entryPoint, scope, new Object[0]);
+            bplog("Done - no bsyncs!");
             enterZombieMode(); // If we got here, there was no bSync in the JS code.
             
         } catch (ContinuationPending pending) {
             continuation = pending;
+            if ( currentRwbStatement==null ) {
+                System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
+                throw new IllegalStateException("BSync called but no statement registered");
+            }
+            
         } finally {
             closeGlobalContext();
         }
@@ -115,6 +99,7 @@ public class BThread implements Serializable {
      */
     // TODO return Optional
     public ContinuationPending resume(BEvent event) {
+        bplog("resuming");
         try {
             Object toResume = continuation.getContinuation();
             continuation = null;
@@ -125,6 +110,7 @@ public class BThread implements Serializable {
         
         } catch (ContinuationPending pending) {
             if ( currentRwbStatement==null ) {
+                System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
                 throw new IllegalStateException("BSync called but no statement registered");
             }
             continuation = pending;
@@ -140,17 +126,18 @@ public class BThread implements Serializable {
     }
 
     public void testCall( Object o ) {
-        System.out.println("Test call:" + o);
+        System.out.println("Test call:" + o + "(" + o.getClass().getName() + ")");
     }
     
     public void bsync( RWBStatement aStatement ) {
-        System.out.println("bsyncing with " + aStatement);
         currentRwbStatement = aStatement;
+        bplog("bsyncing with " + currentRwbStatement);
         openGlobalContext();
         ContinuationPending capturedContinuation = globalContext.captureContinuation();
         closeGlobalContext();
         throw capturedContinuation;
     }
+    
     /**
      * BSync call, used by the JS programs. Works as follows:
      * <ol>
@@ -166,7 +153,6 @@ public class BThread implements Serializable {
     public void bsync(Set<? extends BEvent> requestedEvents,
                       EventSet waitedEvents,
                       EventSet blockedEvents) {
-        System.err.println("sync coll" + requestedEvents);
         bsync( RWBStatement.make().request(requestedEvents)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents) );
@@ -177,7 +163,7 @@ public class BThread implements Serializable {
                       EventSet blockedEvents) {
         bsync( RWBStatement.make().request(aRequestedEvent)
                                   .waitFor(waitedEvents)
-                                  .block(waitedEvents));
+                                  .block(blockedEvents));
     }
     
     private void closeGlobalContext() {
@@ -185,6 +171,7 @@ public class BThread implements Serializable {
     }
     
     public void enterZombieMode() {
+        bplog("Entering Zombie mode");
         currentRwbStatement = null;
         continuation = null;
         alive = false;

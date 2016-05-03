@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @author michael
  */
 public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
-
+    
     @Override
     public EventSelectionResult select(Collection<RWBStatement> statements) {
         if ( statements.isEmpty() ) return EventSelectionResult.NONE_REQUESTED;

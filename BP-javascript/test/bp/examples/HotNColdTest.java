@@ -44,10 +44,13 @@ public class HotNColdTest {
         
         sut.start();
         
+        eventLogger.getEvents().forEach(e->System.out.println(e) );
+        
         EventPattern expected = new EventPattern().append(coldEvent).append(hotEvent)
                 .append(coldEvent).append(hotEvent)
                 .append(coldEvent).append(hotEvent)
                 .append(allDoneEvent);
+        
         assertTrue( expected.matches(eventLogger.getEvents()) );
     }
 

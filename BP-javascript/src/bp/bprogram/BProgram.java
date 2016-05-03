@@ -36,6 +36,9 @@ public abstract class BProgram  {
     private final ExecutorService executor = new ForkJoinPool();
     private EventSelectionStrategy eventSelectionStrategy;
     
+    /** BThreads added between bsyncs are added here. */
+    private final BlockingQueue<BThread> recentlyRegisteredBthreads = new LinkedBlockingDeque<>();
+    
     private final List<BProgramListener> listeners = new ArrayList<>();
     
     private volatile boolean started = false;
@@ -71,13 +74,15 @@ public abstract class BProgram  {
     public void start() throws InterruptedException {
         
         listeners.forEach( l -> l.started(this) );
+        started = true;
         
         executor.invokeAll( bthreads.stream()
                                 .map( bt-> new StartBThread(bt) )
                                 .collect(toList()) );
-        
+        startRecentlyRegisteredBThreads();
         bthreadCleanup();
         if ( bthreads.isEmpty() ) {
+            // super corner case, where no bsyncs were called.
             listeners.forEach( l -> l.ended(this) );
         } else {
             superStep();
@@ -107,6 +112,20 @@ public abstract class BProgram  {
         return endEvent;
     }
     
+    
+    private void startRecentlyRegisteredBThreads() throws InterruptedException {
+        
+        add( recentlyRegisteredBthreads );
+        recentlyRegisteredBthreads.forEach( bt -> setupAddedBThread(bt) );
+                
+        executor.invokeAll( recentlyRegisteredBthreads.stream()
+                                .map( bt-> new StartBThread(bt) )
+                                .collect(toList()) );
+        recentlyRegisteredBthreads.clear();
+    }
+    
+    protected abstract void setupAddedBThread( BThread bt );
+    
     protected Collection<RWBStatement> currentStatements() { 
         return bthreads.stream()
                 .map( BThread::getCurrentRwbStatement )
@@ -134,8 +153,8 @@ public abstract class BProgram  {
                 .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
                 .map( bt->new ResumeBThread(bt, anEvent) )
                 .collect( toList() );
-        
         executor.invokeAll(resumes);
+        startRecentlyRegisteredBThreads();
     }
     
     public void add(Collection<BThread> bts) {
@@ -147,11 +166,18 @@ public abstract class BProgram  {
         listeners.forEach( l -> l.bthreadAdded(this, bt) );
     }
     
+    /**
+     * Registers a BThread into the program. If the program started, the BThread will
+     * take part in the current bstep.
+     * 
+     * @param bt 
+     */
     public void registerBThread(BThread bt) {
-        add(bt);
         if (started) {
-            // FIXME this means we need to wait for this BThread to terminate. Superstep needs updating.
-            executor.submit(new StartBThread(bt));
+            bplog("Queued " + bt.getName());
+            recentlyRegisteredBthreads.add(bt);
+        } else {
+            add(bt);
         }
     }
     

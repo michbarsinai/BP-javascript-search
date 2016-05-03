@@ -1,0 +1,82 @@
+@startuml
+package bp {
+
+note as N1
+Main classes and methods
+for the <i>bp</i> package.
+The main classes, from client code point of view,
+are <i>BProgram</i> and <i>BJavascriptProgram</i>.
+
+They will be merged soon.
+end note
+
+package bprogram {
+  class BProgram {
+    + start()
+  }
+  class BJavascriptProgram {
+  }
+  note left: Has JS content
+
+  class BThread
+  note bottom: Has JS content
+
+  class RWBStatement
+
+  package listenters {
+    interface BProgramListener
+    class InMemoryEventLogger ..|> BProgramListener
+    class StreamLogger ..|> BProgramListener
+  }
+
+  BThread *--> "0..1" RWBStatement
+  BProgram *--> "1..*" BThread
+  BProgram *--> "1..*" BProgramListener: listeners
+
+
+
+
+
+}
+
+package events {
+  class BEvent
+}
+
+
+package eventsets {
+  interface EventSet {
+    contains(BEvent)
+  }
+  class ExplicitEventSet
+
+  ExplicitEventSet ..|> EventSet
+  ExplicitEventSet *--> "0..*" BEvent
+}
+
+package eventselection {
+  interface EventSelectionStrategy {
+    EventSelectionResult select(statements);
+  }
+
+  class SimpleEventSelectionStrategy
+
+  class EventSelectionResult <<abstract>>
+  class Selected --|> EventSelectionResult
+  class Deadlock --|> EventSelectionResult
+  class NoneRequested --|> EventSelectionResult
+
+  SimpleEventSelectionStrategy ..|> EventSelectionStrategy
+  EventSelectionStrategy ..>EventSelectionResult : <<creates>>
+  EventSelectionStrategy ..>RWBStatement : <<consumes>>
+}
+
+BProgram *--> EventSelectionStrategy: <<arbiter>>
+BJavascriptProgram --|> BProgram
+BEvent ..|> EventSet
+RWBStatement *--> EventSet: WaitFor
+RWBStatement *--> EventSet: Block
+RWBStatement *--> ExplicitEventSet: Request
+Selected o-->BEvent : selected event
+}
+@enduml

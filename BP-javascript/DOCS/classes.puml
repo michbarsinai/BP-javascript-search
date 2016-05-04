@@ -2,8 +2,10 @@
 package bp {
 
 note as N1
-Main classes and methods
-for the <i>bp</i> package.
+<b>Main classes and methods for the <i>bp</i> package. This</b>
+<b>is not an exhaustive list of everything,</b>
+<b>just what you need to know to get started.</b>
+
 The main classes, from client code point of view,
 are <i>BProgram</i> and <i>BJavascriptProgram</i>.
 
@@ -14,12 +16,16 @@ package bprogram {
   class BProgram {
     + start()
   }
-  class BJavascriptProgram {
-  }
+  class BJavascriptProgram
   note left: Has JS content
 
   class BThread
   note bottom: Has JS content
+
+  class BSyncState {
+    + statements
+    + externalEvents
+  }
 
   class RWBStatement
 
@@ -32,10 +38,7 @@ package bprogram {
   BThread *--> "0..1" RWBStatement
   BProgram *--> "1..*" BThread
   BProgram *--> "1..*" BProgramListener: listeners
-
-
-
-
+  BSyncState o--> "1..*" RWBStatement
 
 }
 
@@ -60,15 +63,29 @@ package eventselection {
   }
 
   class SimpleEventSelectionStrategy
+  class Selected {
+    + event
+  }
 
-  class EventSelectionResult <<abstract>>
+  class SelectedExternal {
+    + index
+  }
+
+  class EventSelectionResult <<abstract>> {
+    + accept( Visitor<R> ) : R
+  }
+
+  class Deadlock <<Singleton>>
+  class NoneRequested <<Singleton>>
+  
   class Selected --|> EventSelectionResult
+  class SelectedExternal --|> Selected
   class Deadlock --|> EventSelectionResult
   class NoneRequested --|> EventSelectionResult
 
   SimpleEventSelectionStrategy ..|> EventSelectionStrategy
   EventSelectionStrategy ..>EventSelectionResult : <<creates>>
-  EventSelectionStrategy ..>RWBStatement : <<consumes>>
+  EventSelectionStrategy ..>BSyncState : <<consumes>>
 }
 
 BProgram *--> EventSelectionStrategy: <<arbiter>>

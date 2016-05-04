@@ -1,4 +1,4 @@
-package bp.examples;
+package bp.examples.hotandcold;
 
 import bp.events.BEvent;
 import bp.bprogram.BJavascriptProgram;

@@ -13,6 +13,8 @@ import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -32,9 +34,14 @@ public abstract class BProgram  {
     public Set<BThread> bthreads;
     
     private String name;
-    private final BlockingQueue<BEvent> inputEventQueue = new LinkedBlockingQueue<>();
     private final ExecutorService executor = new ForkJoinPool();
     private EventSelectionStrategy eventSelectionStrategy;
+
+    /** Events are enqueued here by external threads */
+    private final BlockingQueue<BEvent> recentlyEnquqedExternalEvents = new LinkedBlockingQueue<>();
+    
+    /** At the BProgram's leisure, the external event are moved here, where they can be managed. */
+    private final List<BEvent> enqueuedExternalEvents = new LinkedList<>();
     
     /** BThreads added between bsyncs are added here. */
     private final BlockingQueue<BThread> recentlyRegisteredBthreads = new LinkedBlockingDeque<>();
@@ -91,6 +98,48 @@ public abstract class BProgram  {
    
     
     
+    class ResultHandler implements EventSelectionResult.Visitor<Boolean> {
+        EmptyResult endResult;
+        
+        @Override
+        public Boolean visit(EventSelectionResult.SelectedExternal se) {
+            try {
+                enqueuedExternalEvents.remove( se.getIndex() );
+                triggerEvent( se.getEvent() );
+                bthreadCleanup();
+                return true;
+            } catch (InterruptedException ex) {
+               throw new RuntimeException( ex );
+            }
+        }
+
+        @Override
+        public Boolean visit(Selected se) {
+            try {
+                triggerEvent( se.getEvent() );
+                bthreadCleanup();
+                return true;
+            } catch (InterruptedException ex) {
+               throw new RuntimeException( ex );
+            }
+        }
+
+        @Override
+        public Boolean visit(EventSelectionResult.Deadlock dl) {
+            endResult = dl;
+            return false;
+        }
+
+        @Override
+        public Boolean visit(EventSelectionResult.NoneRequested ne) {
+            endResult = ne;
+            return false;
+        }
+        
+    }
+    
+    final ResultHandler handler = new ResultHandler();
+    
     /**
      * Advances the BProgram a single super-step, that is until there are 
      * no more internal events that can be selected.
@@ -100,19 +149,29 @@ public abstract class BProgram  {
      */
     public EventSelectionResult.EmptyResult superStep() throws InterruptedException {
         
-        EventSelectionResult esr = eventSelectionStrategy.select(currentStatements());    
-        while( esr instanceof Selected  ) {
-            BEvent selectedEvent = ((Selected)esr).getEvent();
-            triggerEvent(selectedEvent);
-            bthreadCleanup();
-            esr = eventSelectionStrategy.select(currentStatements());
-        }
-        final EmptyResult endEvent = (EmptyResult)esr;
-        listeners.forEach( l->l.superstepDone(this, endEvent) );
-        return endEvent;
+        handler.endResult = null;
+        while ( eventSelectionStrategy.select(createBSyncStatement()).accept(handler) ) {}
+        listeners.forEach( l->l.superstepDone(this, handler.endResult) );
+        return handler.endResult;
+        
     }
     
+    protected BSyncState createBSyncStatement() {
+        recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
+        return new BSyncState( currentStatements(), Collections.unmodifiableList(enqueuedExternalEvents) );
+    }
     
+    /**
+     * Creates a list of the current {@link RWBStatements} of the current BThreads.
+     * Note that the order in the list is arbitrary.
+     * @return list of statements in arbitrary order.
+     */
+    protected List<RWBStatement> currentStatements() { 
+        return bthreads.stream()
+                .map( BThread::getCurrentRwbStatement )
+                .collect( toList() );
+    }
+   
     private void startRecentlyRegisteredBThreads() throws InterruptedException {
         
         add( recentlyRegisteredBthreads );
@@ -126,12 +185,6 @@ public abstract class BProgram  {
     
     protected abstract void setupAddedBThread( BThread bt );
     
-    protected Collection<RWBStatement> currentStatements() { 
-        return bthreads.stream()
-                .map( BThread::getCurrentRwbStatement )
-                .collect( toList() );
-    }
-   
     /**
      * Awakens BThreads that waited for/requested this event in their last bsync,
      * and waits for them to terminate.
@@ -186,13 +239,13 @@ public abstract class BProgram  {
      *
      * @param e
      */
-    public void enququeExternalEvent(BEvent e) {
-        inputEventQueue.add(e);
+    public void enqueueExternalEvent(BEvent e) {
+        recentlyEnquqedExternalEvents.add(e);
     }
     
     public BEvent dequeueExternalEvent() {
         try {
-            return inputEventQueue.take();
+            return recentlyEnquqedExternalEvents.take();
         } catch (InterruptedException ie) {
             return null;
         }

@@ -12,6 +12,7 @@ import java.util.Objects;
 public abstract class EventSelectionResult {
     
     public static interface Visitor<R> {
+        R visit( SelectedExternal se );
         R visit( Selected se );
         R visit( Deadlock dl );
         R visit( NoneRequested ne );
@@ -21,6 +22,9 @@ public abstract class EventSelectionResult {
     public static final NoneRequested NONE_REQUESTED = new NoneRequested();
     public static Selected selected( BEvent evt ) {
         return new Selected(evt);
+    }
+    public static SelectedExternal selectedExternal( BEvent evt, int idx ) {
+        return new SelectedExternal(evt, idx);
     }
     
     private EventSelectionResult(){
@@ -82,6 +86,62 @@ public abstract class EventSelectionResult {
     }
     
     /**
+     * Selected and event form the external events queue. That event should be
+     * removed from the queue, hence the added index.
+     */
+    public static class SelectedExternal extends Selected {
+        
+        private final int index;
+        
+        public SelectedExternal(BEvent selectedEvent, int anIndex) {
+            super(selectedEvent);
+            index = anIndex;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+        
+        @Override
+        public <R> R accept( Visitor<R> v ) {
+            return v.visit( this );
+        }
+        
+        @Override
+        public String toString() {
+            return "[SelectedExternal event:" + getEvent() + " index:" + getIndex() + "]";
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 23 * hash + this.index;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final SelectedExternal other = (SelectedExternal) obj;
+            if (this.index != other.index) {
+                return false;
+            }
+            return super.equals(obj);
+        }
+        
+        
+       
+    }
+    
+    /**
      * No event was selected since all requested events are blocked.
      */
     public static class Deadlock extends EmptyResult {
@@ -111,4 +171,5 @@ public abstract class EventSelectionResult {
             return "[NoneRequested]";
         }
     }
+    
 }

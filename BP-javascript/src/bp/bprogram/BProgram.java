@@ -24,7 +24,12 @@ import static java.util.stream.Collectors.toList;
  * @author michael
  */
 public abstract class BProgram  {
-
+    
+    /**
+     * "Poison pill" o insert to the external event queue. Used only to turn the daemon mode off.
+     */
+    private static final BEvent NO_MORE_DAEMON = new BEvent("NO_MORE_DAEMON");
+    
     /**
      * A collection containing all the BThreads in the system. A BThread
      * adds itself to the list either - in its constructor and removes itself
@@ -34,6 +39,11 @@ public abstract class BProgram  {
     public Set<BThread> bthreads;
     
     private String name;
+    
+    /**
+     * When {@code true}, the bprogram waits for an external event when no internal ones are available.
+     */
+    private boolean daemonMode;
     private final ExecutorService executor = new ForkJoinPool();
     private EventSelectionStrategy eventSelectionStrategy;
 
@@ -92,12 +102,31 @@ public abstract class BProgram  {
             // super corner case, where no bsyncs were called.
             listeners.forEach( l -> l.ended(this) );
         } else {
-            superStep();
+            do {
+                mainEventLoop();
+            } while ( isDaemonMode() && waitForExternalEvent() );
         }
     }
    
     
+    final ResultHandler handler = new ResultHandler();
     
+    /**
+     * Advances the BProgram a single super-step, that is until there are 
+     * no more internal events that can be selected.
+     * 
+     * @throws InterruptedException
+     * @return The reason the super-step terminated.
+     */
+    public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
+        
+        handler.endResult = null;
+        while ( eventSelectionStrategy.select(createBSyncStatement()).accept(handler) ) {}
+        listeners.forEach( l->l.superstepDone(this, handler.endResult) );
+        return handler.endResult;
+        
+    }
+
     class ResultHandler implements EventSelectionResult.Visitor<Boolean> {
         EmptyResult endResult;
         
@@ -138,26 +167,11 @@ public abstract class BProgram  {
         
     }
     
-    final ResultHandler handler = new ResultHandler();
-    
-    /**
-     * Advances the BProgram a single super-step, that is until there are 
-     * no more internal events that can be selected.
-     * 
-     * @throws InterruptedException
-     * @return The reason the super-step terminated.
-     */
-    public EventSelectionResult.EmptyResult superStep() throws InterruptedException {
-        
-        handler.endResult = null;
-        while ( eventSelectionStrategy.select(createBSyncStatement()).accept(handler) ) {}
-        listeners.forEach( l->l.superstepDone(this, handler.endResult) );
-        return handler.endResult;
-        
-    }
-    
     protected BSyncState createBSyncStatement() {
         recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
+        if ( enqueuedExternalEvents.remove( NO_MORE_DAEMON ) ) {
+            daemonMode=false;
+        }
         return new BSyncState( currentStatements(), Collections.unmodifiableList(enqueuedExternalEvents) );
     }
     
@@ -243,13 +257,17 @@ public abstract class BProgram  {
         recentlyEnquqedExternalEvents.add(e);
     }
     
-    public BEvent dequeueExternalEvent() {
-        try {
-            return recentlyEnquqedExternalEvents.take();
-        } catch (InterruptedException ie) {
-            return null;
+    private boolean waitForExternalEvent() throws InterruptedException {
+        final BEvent newEvent = recentlyEnquqedExternalEvents.take();
+        if ( newEvent == NO_MORE_DAEMON ) {
+            daemonMode = false;
+            return false;
+        } else {
+            enqueuedExternalEvents.add(newEvent);
+            return true;
         }
     }
+    
     
     public void bplog(String string) {
         if (debugMode)
@@ -283,6 +301,19 @@ public abstract class BProgram  {
     
     public void removeListener( BProgramListener aListener ) {
         listeners.remove(aListener);
+    }
+
+    public void setDaemonMode(boolean newDaemonMode) {
+        if ( daemonMode && !newDaemonMode ) {
+            daemonMode = false;
+            recentlyEnquqedExternalEvents.add(NO_MORE_DAEMON);
+        } else {
+            daemonMode = newDaemonMode;
+        }
+    }
+
+    public boolean isDaemonMode() {
+        return daemonMode;
     }
     
     ////////////////////////////////////////////////////////////////////////////

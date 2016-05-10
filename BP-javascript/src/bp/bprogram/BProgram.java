@@ -13,7 +13,22 @@ import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
+import bp.eventsets.EventSetConstants;
+import static bp.eventsets.EventSetConstants.all;
+import static bp.eventsets.EventSetConstants.emptySet;
+import static java.nio.file.Paths.get;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Path;
+import static java.nio.file.Files.readAllBytes;
 import static java.util.stream.Collectors.toList;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.ImporterTopLevel;
+import org.mozilla.javascript.Scriptable;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s and 
@@ -27,6 +42,39 @@ public abstract class BProgram  {
      * "Poison pill" o insert to the external event queue. Used only to turn the daemon mode off.
      */
     private static final BEvent NO_MORE_DAEMON = new BEvent("NO_MORE_DAEMON");
+    public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
+
+    public static Object evaluateInGlobalContext(Scriptable scope, InputStream ios, String scriptName) {
+        InputStreamReader streamReader = new InputStreamReader(ios);
+        BufferedReader br = new BufferedReader(streamReader);
+        StringBuilder sb = new StringBuilder();
+        String line;
+        try {
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("error while reading javascript fom stream", e);
+        }
+        String script = sb.toString();
+        return evaluateInGlobalContext(scope, script, scriptName);
+    }
+
+    public static Object evaluateInGlobalContext(Scriptable scope, String path) {
+        Path pathObject = get(path);
+        try {
+            String script = new String(readAllBytes(pathObject));
+            return evaluateInGlobalContext(scope, script, pathObject.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Error while evaluating in global context: " + e.getMessage(), e);
+        }
+    }
+
+    public static Object evaluateInGlobalContext(Scriptable scope, String script, String scriptName) {
+        Context cx = ContextFactory.getGlobal().enterContext();
+        cx.setOptimizationLevel(-1); // must use interpreter mode
+        return cx.evaluateString(scope, script, scriptName, 1, null);
+    }
     
     /**
      * A collection containing all the BThreads in the system. A BThread
@@ -57,6 +105,7 @@ public abstract class BProgram  {
     private final List<BProgramListener> listeners = new ArrayList<>();
     
     private volatile boolean started = false;
+    protected Scriptable globalScope;
 
     public BProgram() {
         this(BProgram.class.getSimpleName());
@@ -84,10 +133,9 @@ public abstract class BProgram  {
             }
         }
     }
-    
      
     public void start() throws InterruptedException {
-        
+        setup();
         listeners.forEach( l -> l.started(this) );
         started = true;
         
@@ -123,6 +171,133 @@ public abstract class BProgram  {
         listeners.forEach( l->l.superstepDone(this, handler.endResult) );
         return handler.endResult;
         
+    }
+
+    /**
+     * Event constructor, called from Javascript, hence the funny capitalization.
+     * @param name name of the event
+     * @return an event with the passed name.
+     */
+    public BEvent Event(String name) {
+        return new BEvent(name);
+    }
+
+    public Object evaluateInGlobalScope(InputStream ios, String scriptname) {
+        return evaluateInGlobalContext(globalScope, ios, scriptname);
+    }
+
+    public Object evaluateInGlobalScope(String path) {
+        return evaluateInGlobalContext(globalScope, path);
+    }
+
+    public Object evaluateInGlobalScope(String path, String scriptname) {
+        try (final InputStream ios = getClass().getResourceAsStream(path)) {
+            return evaluateInGlobalScope(ios, scriptname);
+        } catch (IOException iox) {
+            throw new RuntimeException("Error reading javascript file '" + path + "'", iox);
+        }
+    }
+
+    protected void loadJavascriptFile(String path) {
+        evaluateInGlobalScope(getClass().getResource(path).getPath());
+    }
+
+    /**
+     *  makes the obj available in the java script code , under the given name "objName"
+     *
+     * @param objName
+     * @param obj
+     */
+    protected void putInGlobalScope(String objName, Object obj) {
+        Context cx = ContextFactory.getGlobal().enterContext();
+        cx.setOptimizationLevel(-1); // must use interpreter mode
+        try {
+            globalScope.put(objName, globalScope, Context.javaToJS(obj, globalScope));
+        } finally {
+            Context.exit();
+        }
+    }
+
+    /**
+     * Called from JS to add BThreads running func as their
+     * runnable code.
+     *
+     * @param name
+     * @param func
+     * @return
+     */
+    public BThread registerBThread(String name, Function func) {
+        BThread bt = new BThread(name, func);
+        registerBThread(bt);
+        return bt;
+    }
+    
+    /**
+     * Registers a BThread into the program. If the program started, the BThread will
+     * take part in the current bstep.
+     * 
+     * @param bt 
+     */
+    public void registerBThread(BThread bt) {
+        if (started) {
+            bplog("Queued " + bt.getName());
+            recentlyRegisteredBthreads.add(bt);
+        } else {
+            add(bt);
+        }
+    }
+    
+    /**
+     * Awakens BThreads that waited for/requested this event in their last bsync,
+     * and waits for them to terminate.
+     * 
+     * @param anEvent The event to trigger. Cannot be {@code null}.
+     * @throws java.lang.InterruptedException
+     */
+    public void triggerEvent(BEvent anEvent) throws InterruptedException {
+        if ( anEvent == null ) {
+            throw new IllegalArgumentException("Cannot trigger a null event.");
+        }        
+        listeners.forEach( l->l.eventSelected(this, anEvent) );
+        
+        bthreads.forEach( bt -> {if (bt.getCurrentRwbStatement()==null) {
+            System.out.println(bt.getName() + " Has null stmt");
+        }});
+        
+        Collection<ResumeBThread> resumes = bthreads.stream()
+                .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
+                .map( bt->new ResumeBThread(bt, anEvent) )
+                .collect( toList() );
+        executor.invokeAll(resumes);
+        startRecentlyRegisteredBThreads();
+    }
+    
+    public void add(Collection<BThread> bts) {
+        bts.forEach( bt -> add(bt) );
+    }
+
+    public void add(BThread bt) {
+        bthreads.add(bt);
+        listeners.forEach( l -> l.bthreadAdded(this, bt) );
+    }
+    
+    /**
+     * a method that sends events as input for the application
+     *
+     * @param e
+     */
+    public void enqueueExternalEvent(BEvent e) {
+        recentlyEnquqedExternalEvents.add(e);
+    }
+    
+    
+    /**
+     * Convenience method to register event in the program's context. Event names are used
+     * as their Javascript name.
+     * @param events The events to register.
+     */
+    protected void registerEvents(BEvent... events) {
+        Arrays.asList(events).forEach((BEvent e) -> globalScope.put(e.getName(), globalScope, Context.javaToJS(e, globalScope)));
     }
 
     class ResultHandler implements EventSelectionResult.Visitor<Boolean> {
@@ -195,65 +370,66 @@ public abstract class BProgram  {
         recentlyRegisteredBthreads.clear();
     }
     
-    protected abstract void setupAddedBThread( BThread bt );
-    
     /**
-     * Awakens BThreads that waited for/requested this event in their last bsync,
-     * and waits for them to terminate.
-     * 
-     * @param anEvent The event to trigger. Cannot be {@code null}.
-     * @throws java.lang.InterruptedException
+     * Sets up internal data structures for running.
      */
-    public void triggerEvent(BEvent anEvent) throws InterruptedException {
-        if ( anEvent == null ) {
-            throw new IllegalArgumentException("Cannot trigger a null event.");
-        }        
-        listeners.forEach( l->l.eventSelected(this, anEvent) );
-        
-        bthreads.forEach( bt -> {if (bt.getCurrentRwbStatement()==null) {
-            System.out.println(bt.getName() + " Has null stmt");
-        }});
-        
-        Collection<ResumeBThread> resumes = bthreads.stream()
-                .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
-                .map( bt->new ResumeBThread(bt, anEvent) )
-                .collect( toList() );
-        executor.invokeAll(resumes);
-        startRecentlyRegisteredBThreads();
+    protected void setup() {
+        setupGlobalScope();
+        setupBThreadScopes();
     }
     
-    public void add(Collection<BThread> bts) {
-        bts.forEach( bt -> add(bt) );
+    protected void setupAddedBThread( BThread bt ) {
+        try {
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
+            bt.setupScope(globalScope);
+        } finally {
+            Context.exit();
+        }
+    }
+    
+    protected void setupBThreadScopes() {
+        try {
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
+            bthreads.forEach(bt -> bt.setupScope(globalScope) );
+        } finally {
+            Context.exit();
+        }
     }
 
-    public void add(BThread bt) {
-        bthreads.add(bt);
-        listeners.forEach( l -> l.bthreadAdded(this, bt) );
-    }
-    
-    /**
-     * Registers a BThread into the program. If the program started, the BThread will
-     * take part in the current bstep.
-     * 
-     * @param bt 
-     */
-    public void registerBThread(BThread bt) {
-        if (started) {
-            bplog("Queued " + bt.getName());
-            recentlyRegisteredBthreads.add(bt);
-        } else {
-            add(bt);
+    protected void setupGlobalScope() {
+        Context cx = ContextFactory.getGlobal().enterContext();
+        cx.setOptimizationLevel(-1); // must use interpreter mode
+        try (InputStream script =
+                    BProgram.class.getResourceAsStream("globalScopeInit.js");) {
+            ImporterTopLevel importer = new ImporterTopLevel(cx);
+            globalScope = cx.initStandardObjects(importer);
+            globalScope.put("bpjs", globalScope,
+                    Context.javaToJS(this, globalScope));
+            globalScope.put("emptySet", globalScope,
+                    Context.javaToJS(emptySet, globalScope));
+            globalScope.put("noEvents", globalScope,
+                    Context.javaToJS(EventSetConstants.noEvents, globalScope));
+            globalScope.put("all", globalScope,
+                    Context.javaToJS(all, globalScope));
+            
+            evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
+            
+            setupProgramScope();
+            
+        } catch (IOException ex) {
+            throw new RuntimeException("Error while setting up global scope", ex );
+        } finally {
+            Context.exit();
         }
     }
     
     /**
-     * a method that sends events as input for the application
-     *
-     * @param e
+     * The BProgram should set up its scope here (e.g. load the script for BThreads).
+     * This method is called after {@link #setupGlobalScope()}.
      */
-    public void enqueueExternalEvent(BEvent e) {
-        recentlyEnquqedExternalEvents.add(e);
-    }
+    protected abstract void setupProgramScope();
     
     private boolean waitForExternalEvent() throws InterruptedException {
         final BEvent newEvent = recentlyEnquqedExternalEvents.take();
@@ -265,7 +441,6 @@ public abstract class BProgram  {
             return true;
         }
     }
-    
     
     public void bplog(String string) {
         if (debugMode)
@@ -314,6 +489,10 @@ public abstract class BProgram  {
         return daemonMode;
     }
     
+    public Scriptable getGlobalScope() {
+        return globalScope;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     /// Debugging Stuff.
     

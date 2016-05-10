@@ -1,16 +1,13 @@
 package bp.examples.externaleventsdaemon;
 
-import bp.bprogram.BJavascriptProgram;
+import bp.bprogram.BProgram;
 import bp.bprogram.listeners.InMemoryEventLoggingListener;
 import bp.bprogram.listeners.StreamLoggerListener;
 import bp.events.BEvent;
 import bp.validation.eventpattern.EventPattern;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -18,8 +15,8 @@ import static org.junit.Assert.assertTrue;
  * @author michael
  */
 public class ExternalEventsDaemonTest {
-    BJavascriptProgram buildProgram() {
-        return new BJavascriptProgram("ExternalEventsDaemon") {
+    BProgram buildProgram() {
+        return new BProgram("ExternalEventsDaemon") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("ExternalEventsDaemon.js");
@@ -30,7 +27,7 @@ public class ExternalEventsDaemonTest {
     
     @Test
     public void superStepTest() throws InterruptedException {
-        final BJavascriptProgram sut = buildProgram();
+        final BProgram sut = buildProgram();
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );
         

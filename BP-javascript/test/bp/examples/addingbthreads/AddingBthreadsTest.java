@@ -1,7 +1,7 @@
 package bp.examples.addingbthreads;
 
+import bp.bprogram.BProgram;
 import bp.events.BEvent;
-import bp.bprogram.BJavascriptProgram;
 import bp.bprogram.listeners.InMemoryEventLoggingListener;
 import bp.bprogram.listeners.StreamLoggerListener;
 import bp.eventsets.EventSet;
@@ -17,8 +17,8 @@ import static org.junit.Assert.assertTrue;
 public class AddingBthreadsTest {
     
 
-    BJavascriptProgram buildProgram() {
-        return new BJavascriptProgram("AddingBthreadsTest") {
+    BProgram buildProgram() {
+        return new BProgram("AddingBthreadsTest") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("AddingBthreads.js");
@@ -33,7 +33,7 @@ public class AddingBthreadsTest {
         final BEvent kidADone = new BEvent("kidADone");
         final BEvent kidBDone = new BEvent("kidBDone");
         
-        BJavascriptProgram sut = buildProgram();
+        BProgram sut = buildProgram();
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );
         

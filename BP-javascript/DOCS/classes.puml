@@ -1,26 +1,24 @@
 @startuml
 package bp {
 
-note as N1
+legend bottom
 <b>Main classes and methods for the <i>bp</i> package. This</b>
 <b>is not an exhaustive list of everything,</b>
 <b>just what you need to know to get started.</b>
 
-The main classes, from client code point of view,
-are <i>BProgram</i> and <i>BJavascriptProgram</i>.
-
-They will be merged soon.
-end note
+The main class, from client code point of view,
+is <i>BProgram</i>.
+endlegend
 
 package bprogram {
   class BProgram {
+    - javascriptContext
     + start()
   }
-  class BJavascriptProgram
-  note left: Has JS content
 
-  class BThread
-  note bottom: Has JS content
+  class BThread {
+    - javascriptContext
+  }
 
   class BSyncState {
     + statements
@@ -55,7 +53,13 @@ package eventsets {
     + events:Set<Event>
   }
 
-  ExplicitEventSet ..|> EventSet
+  class EventSetConstants {
+    {static} emptySet: EventSet
+    {static} allSet: EventSet
+    {static} noEvents: Set<BEvent>
+  }
+
+  ExplicitEventSet .up.|> EventSet
   ExplicitEventSet *--> "0..*" BEvent
 }
 
@@ -64,7 +68,9 @@ package eventselection {
     EventSelectionResult select(statements);
   }
 
-  class SimpleEventSelectionStrategy
+  class SimpleEventSelectionStrategy {
+    + randomSeed:int
+  }
   class Selected {
     + event
   }
@@ -91,11 +97,10 @@ package eventselection {
 }
 
 BProgram *--> EventSelectionStrategy: <<arbiter>>
-BJavascriptProgram --|> BProgram
 BEvent ..|> EventSet
-RWBStatement *--> EventSet: WaitFor
-RWBStatement *--> EventSet: Block
-RWBStatement *--> ExplicitEventSet: Request
+RWBStatement *--> EventSet: waitFor
+RWBStatement *--> EventSet: block
+RWBStatement *--> ExplicitEventSet: request
 Selected o-->BEvent : selected event
 }
 @enduml

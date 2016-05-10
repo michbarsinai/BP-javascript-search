@@ -1,7 +1,7 @@
 package bp.examples.namedargs;
 
 import bp.events.BEvent;
-import bp.bprogram.BJavascriptProgram;
+import bp.bprogram.BProgram;
 import bp.bprogram.listeners.InMemoryEventLoggingListener;
 import bp.bprogram.listeners.StreamLoggerListener;
 import bp.validation.eventpattern.EventPattern;
@@ -14,8 +14,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class NamedArgsHotNColdTest {
 
-    BJavascriptProgram buildProgram() {
-        return new BJavascriptProgram("NamedArgsHotNCold") {
+    BProgram buildProgram() {
+        return new BProgram("NamedArgsHotNCold") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("NamedArgsHotNCold.js");
@@ -25,7 +25,7 @@ public class NamedArgsHotNColdTest {
     
     @Test
     public void superStepTest() throws InterruptedException {
-        BJavascriptProgram sut = buildProgram();
+        BProgram sut = buildProgram();
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );
         

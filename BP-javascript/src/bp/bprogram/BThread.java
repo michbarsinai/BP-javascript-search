@@ -72,7 +72,7 @@ public class BThread implements Serializable {
 
     public Scriptable generateSubScope(Scriptable scope, InputStream ios,
                                        String scriptName) {
-        Scriptable tScope = (Scriptable) BJavascriptProgram.evaluateInGlobalContext(
+        Scriptable tScope = (Scriptable) BProgram.evaluateInGlobalContext(
                 scope,
                 ios,
                 scriptName);

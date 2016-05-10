@@ -1,4 +1,7 @@
-/* global bpjs, noEvents, emptySet, hotEvent, coldEvent, allDone */
+/* global bpjs, emptySet, noEvents */
+
+var coldEvent = bpjs.Event("coldEvent");
+var hotEvent = bpjs.Event("hotEvent");
 
 bpjs.registerBThread("HotBt", function () {
     bsync(hotEvent, emptySet, emptySet);
@@ -17,5 +20,5 @@ bpjs.registerBThread("AlternatorBt", function () {
         bsync(noEvents, coldEvent, hotEvent); // block hot first, so as not to burn our thumb.
         bsync(noEvents, hotEvent, coldEvent);
     }
-    bsync(allDone, emptySet, emptySet);
+    bsync(bpjs.Event("allDone"), emptySet, emptySet);
 });

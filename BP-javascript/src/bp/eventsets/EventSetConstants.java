@@ -9,12 +9,11 @@ import java.util.Set;
  * Utility class for commonly used event sets.
  * 
  */
-public class EventSets {
+public class EventSetConstants {
     /**
      * An event set that contains all events and event sets.
      * @author Bertrand Russel
      */
-    // TODO should it really contain event sets now? Can't it just contain events?
     public final static EventSet all = new EventSet() {
 
         @Override

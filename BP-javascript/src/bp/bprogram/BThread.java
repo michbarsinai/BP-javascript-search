@@ -7,8 +7,17 @@ import java.io.InputStream;
 import java.io.Serializable;
 
 import static bp.BProgramControls.debugMode;
+import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
+import bp.eventsets.EventSetConstants;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * A Javascript BThread (NOT a Java thread!). 
@@ -125,10 +134,6 @@ public class BThread implements Serializable {
         return null;
     }
 
-    public void testCall( Object o ) {
-        System.out.println("Test call:" + o + "(" + o.getClass().getName() + ")");
-    }
-    
     public void bsync( RWBStatement aStatement ) {
         currentRwbStatement = aStatement;
         bplog("bsyncing with " + currentRwbStatement);
@@ -164,6 +169,52 @@ public class BThread implements Serializable {
         bsync( RWBStatement.make().request(aRequestedEvent)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents));
+    }
+    
+     public void bsync( NativeObject jsRWB ) {
+        Map<String, Object> jRWB = (Map)Context.jsToJava(jsRWB, Map.class);
+        
+        RWBStatement stmt = RWBStatement.make();
+        Object req = jRWB.get("request");
+        if ( req != null ) {
+            if ( req instanceof BEvent ) {
+                stmt = stmt.request((BEvent)req);
+            } else if ( req instanceof NativeArray ) {
+                NativeArray arr = (NativeArray) req;
+                stmt = stmt.request(
+                        Arrays.asList( arr.getIndexIds() ).stream()
+                              .map( i -> (BEvent)arr.get(i) )
+                              .collect( toSet() ));
+            }
+        }
+        
+        stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
+                   .block( convertToEventSet(jRWB.get("block")) );
+        
+        bsync( stmt );
+        
+    }
+    
+    private EventSet convertToEventSet( Object jsObject ) {
+        if ( jsObject == null ) return EventSetConstants.emptySet;
+        
+        // This covers event sets AND events.
+        if ( jsObject instanceof EventSet ) {
+            return (EventSet)jsObject;
+        
+        } else if ( jsObject instanceof NativeArray ) {
+            NativeArray arr = (NativeArray) jsObject;
+            return ComposableEventSet.anyOf(
+              Arrays.asList(arr.getIndexIds()).stream()
+                    .map( i ->(EventSet)arr.get(i) )
+                    .collect( toSet() ) );
+        } else {
+            final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
+            Logger.getLogger(BThread.class.getName()).log(Level.SEVERE, errorMessage);
+            throw new IllegalArgumentException( errorMessage);
+        }
+        
+       
     }
     
     private void closeGlobalContext() {

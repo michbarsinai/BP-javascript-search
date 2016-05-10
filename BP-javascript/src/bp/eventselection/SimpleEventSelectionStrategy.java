@@ -5,7 +5,7 @@ import bp.events.BEvent;
 import bp.bprogram.RWBStatement;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
-import bp.eventsets.EventSets;
+import bp.eventsets.EventSetConstants;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
@@ -35,11 +35,10 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     public EventSelectionResult select(BSyncState state) {
         
         List<RWBStatement> statements = state.getStatements();
-        EventSet blocked = ComposableEventSet.anyOf(
-                statements.stream()
+        EventSet blocked = ComposableEventSet.anyOf(statements.stream()
                 .filter( stmt -> stmt!=null )
                 .map( RWBStatement::getBlock )
-                .filter( r -> r != EventSets.emptySet )
+                .filter(r -> r != EventSetConstants.emptySet )
                 .collect( Collectors.toSet() ) );
         
         // Corner case, not sure this is even possible.

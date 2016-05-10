@@ -51,7 +51,9 @@ package eventsets {
   interface EventSet {
     contains(BEvent)
   }
-  class ExplicitEventSet
+  class ExplicitEventSet {
+    + events:Set<Event>
+  }
 
   ExplicitEventSet ..|> EventSet
   ExplicitEventSet *--> "0..*" BEvent
@@ -77,7 +79,7 @@ package eventselection {
 
   class Deadlock <<Singleton>>
   class NoneRequested <<Singleton>>
-  
+
   class Selected --|> EventSelectionResult
   class SelectedExternal --|> Selected
   class Deadlock --|> EventSelectionResult

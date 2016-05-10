@@ -2,7 +2,7 @@ package bp.bprogram;
 
 import bp.BProgramControls;
 import bp.events.BEvent;
-import bp.eventsets.EventSets;
+import bp.eventsets.EventSetConstants;
 import org.mozilla.javascript.*;
 
 import java.io.BufferedReader;
@@ -11,10 +11,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 
-import static bp.eventsets.EventSets.all;
+import static bp.eventsets.EventSetConstants.all;
 import static java.nio.file.Files.readAllBytes;
-import static bp.eventsets.EventSets.emptySet;
+import static bp.eventsets.EventSetConstants.emptySet;
 import java.util.Arrays;
+import static java.nio.file.Paths.get;
 import static java.nio.file.Paths.get;
 
 /**
@@ -182,7 +183,7 @@ public abstract class BJavascriptProgram extends BProgram {
             globalScope.put("emptySet", globalScope,
                     Context.javaToJS(emptySet, globalScope));
             globalScope.put("noEvents", globalScope,
-                    Context.javaToJS(EventSets.noEvents, globalScope));
+                    Context.javaToJS(EventSetConstants.noEvents, globalScope));
             globalScope.put("all", globalScope,
                     Context.javaToJS(all, globalScope));
             

@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import static bp.eventsets.EventSets.emptySet;
+import static bp.eventsets.EventSetConstants.emptySet;
 
 /**
  * A statement a BTHread makes about what events it requests, waits for, and blocks.
@@ -146,5 +146,5 @@ public class RWBStatement {
         }
         return Objects.equals(this.getExcept(), other.getExcept());
     }
-    
+
 }

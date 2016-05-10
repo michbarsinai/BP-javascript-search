@@ -18,19 +18,11 @@ import static org.junit.Assert.assertTrue;
  * @author michael
  */
 public class ExternalEventsDaemonTest {
-    final BEvent in1a = new BEvent("in1a");
-    final BEvent in1b = new BEvent("in1b");
-    final BEvent ext1 = new BEvent("ext1");
-
     BJavascriptProgram buildProgram() {
         return new BJavascriptProgram("ExternalEventsDaemon") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("ExternalEventsDaemon.js");
-        
-                final Scriptable globalScope = getGlobalScope();
-                Arrays.asList(in1a, in1b, ext1).forEach(
-                        e -> globalScope.put( e.getName(), globalScope, Context.javaToJS(e, globalScope)));            
             }
             
         };
@@ -46,7 +38,7 @@ public class ExternalEventsDaemonTest {
             try {
                 for ( int i=0; i<4; i++ ) {
                     Thread.sleep(500);
-                    sut.enqueueExternalEvent(ext1);
+                    sut.enqueueExternalEvent(new BEvent("ext1"));
                     
                 }
             } catch (InterruptedException ex) {
@@ -58,6 +50,10 @@ public class ExternalEventsDaemonTest {
         
         eventLogger.getEvents().forEach(e->System.out.println(e) );
         
+        final BEvent in1a = new BEvent("in1a");
+        final BEvent in1b = new BEvent("in1b");
+        final BEvent ext1 = new BEvent("ext1");
+
         EventPattern expected = new EventPattern()
                 .append(ext1).append(in1a).append(in1b)
                 .append(ext1).append(in1a).append(in1b)

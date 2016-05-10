@@ -16,26 +16,21 @@ import static org.junit.Assert.assertTrue;
  * @author michael
  */
 public class ExternalEventsTest {
-    final BEvent in1a = new BEvent("in1a");
-    final BEvent in1b = new BEvent("in1b");
-    final BEvent ext1 = new BEvent("ext1");
 
     BJavascriptProgram buildProgram() {
         return new BJavascriptProgram("ExternalEvents") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("ExternalEvents.js");
-        
-                final Scriptable globalScope = getGlobalScope();
-                Arrays.asList(in1a, in1b, ext1).forEach(
-                        e -> globalScope.put( e.getName(), globalScope, Context.javaToJS(e, globalScope)));            
             }
-            
         };
     }
     
     @Test
     public void superStepTest() throws InterruptedException {
+        final BEvent in1a = new BEvent("in1a");
+        final BEvent in1b = new BEvent("in1b");
+        final BEvent ext1 = new BEvent("ext1");
         final BJavascriptProgram sut = buildProgram();
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );

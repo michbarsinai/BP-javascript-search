@@ -1,9 +1,14 @@
-/* global bpjs, noEvents, emptySet, parentDone, kidADone, kidBDone */
+/* global bpjs, noEvents, emptySet */
 /* 
  * This little app adds bthreads dynamically.
  */
 
 bpjs.bplog("Program Loaded");
+
+// Define the events.
+var kidADone  = bpjs.Event("kidADone");
+var kidBDone  = bpjs.Event("kidBDone");
+var parentDone= bpjs.Event("parentDone");
 
 bpjs.registerBThread("parentBThread", function () {
     

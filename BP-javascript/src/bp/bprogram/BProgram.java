@@ -13,8 +13,6 @@ import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 
 /**

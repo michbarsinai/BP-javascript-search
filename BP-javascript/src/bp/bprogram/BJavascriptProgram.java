@@ -14,10 +14,7 @@ import java.nio.file.Path;
 import static bp.eventsets.EventSets.all;
 import static java.nio.file.Files.readAllBytes;
 import static bp.eventsets.EventSets.emptySet;
-import static java.nio.file.Paths.get;
 import java.util.Arrays;
-import static java.nio.file.Paths.get;
-import static java.nio.file.Paths.get;
 import static java.nio.file.Paths.get;
 
 /**
@@ -121,6 +118,15 @@ public abstract class BJavascriptProgram extends BProgram {
         BThread bt = new BThread(name, func);
         super.registerBThread(bt);
         return bt;
+    }
+    
+    /**
+     * Event constructor, called from Javascript, hence the funny capitalization.
+     * @param name name of the event
+     * @return an event with the passed name.
+     */
+    public BEvent Event(String name) {
+        return new BEvent(name);
     }
     
     @Override

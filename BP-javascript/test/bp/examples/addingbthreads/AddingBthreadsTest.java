@@ -16,22 +16,23 @@ import static org.junit.Assert.assertTrue;
  */
 public class AddingBthreadsTest {
     
-    final BEvent parentDone = new BEvent("parentDone");
-    final BEvent kidADone = new BEvent("kidADone");
-    final BEvent kidBDone = new BEvent("kidBDone");
 
     BJavascriptProgram buildProgram() {
         return new BJavascriptProgram("AddingBthreadsTest") {
             @Override
             protected void setupProgramScope() {
                 loadJavascriptFile("AddingBthreads.js");
-                registerEvents(parentDone, kidADone, kidBDone);
             }
         };
     }
     
     @Test
     public void superStepTest() throws InterruptedException {
+        
+        final BEvent parentDone = new BEvent("parentDone");
+        final BEvent kidADone = new BEvent("kidADone");
+        final BEvent kidBDone = new BEvent("kidBDone");
+        
         BJavascriptProgram sut = buildProgram();
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ An LSC with a sub-chart. When a asks b to turn on the light,
+ b nags to switch until the light is indeed on.
+-->
+
+
+<lsc id="lscSC" name="An LSC with a sub-chart">
+    <message from="a" to="b" content="setLight(on)" temperature="cold" exec="monitor"/>
+    <loop control="*" participants="b, switch">
+        <message from="b" to="switch" content="setLight(on)" temperature="hot" exec="execute"/>
+        <condition participants="b, switch" content="light_isOn" temperature="cold"/>
+    </loop>
+    <message from="b" to="a" content="lightIsOn" temperature="hot" exec="execute"/>
+</lsc>

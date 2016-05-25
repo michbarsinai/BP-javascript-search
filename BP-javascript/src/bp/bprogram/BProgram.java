@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import static java.nio.file.Files.readAllBytes;
+import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.stream.Collectors.toList;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -103,6 +104,8 @@ public abstract class BProgram  {
     private final BlockingQueue<BThread> recentlyRegisteredBthreads = new LinkedBlockingDeque<>();
     
     private final List<BProgramListener> listeners = new ArrayList<>();
+    
+    private final AtomicInteger autoAddCounter = new AtomicInteger(0);
     
     private volatile boolean started = false;
     protected Scriptable globalScope;
@@ -224,10 +227,26 @@ public abstract class BProgram  {
      *
      * @param name
      * @param func
-     * @return
+     * @return the added BThread
+     * 
+     * @see #registerBThread(org.mozilla.javascript.Function) 
      */
     public BThread registerBThread(String name, Function func) {
         BThread bt = new BThread(name, func);
+        registerBThread(bt);
+        return bt;
+    }
+    
+    /**
+     * Registers a BThread and gives it a unique name. Use when you don't care
+     * about the added BThread's name.
+     * @param func the BThread to add.
+     * @return Added BThread.
+     * 
+     * @see #registerBThread(java.lang.String, org.mozilla.javascript.Function) 
+     */
+    public BThread registerBThread( Function func ) {
+        BThread bt = new BThread("autoadded-" + autoAddCounter.incrementAndGet(), func);
         registerBThread(bt);
         return bt;
     }

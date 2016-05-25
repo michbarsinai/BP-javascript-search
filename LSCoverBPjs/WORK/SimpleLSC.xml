@@ -3,8 +3,8 @@
  Very simple, non-recursive chart.
 -->
 <lsc id="lsc101" name="Simple Message Exchange">
-    <message from="a" to="b" content="ping!" temperature="hot" exec="execute" />
-    <message from="b" to="a" content="pong!" temperature="hot" exec="execute" />
-    <sync participants="a,b,c" />
-    <message from="c" to="a" content="done" temperature="cold" exec="monitor" />
+    <message from="a" fromloc="1" to="b" toloc="1" content="ping!" temperature="hot" exec="execute" />
+    <message from="b" fromloc="2" to="a" toloc="2" content="pong!" temperature="hot" exec="execute" />
+    <sync participants="a,b,c" locations="3,3,1" />
+    <message from="c" fromloc="2" to="a" toloc="4" content="done" temperature="cold" exec="monitor" />
 </lsc>

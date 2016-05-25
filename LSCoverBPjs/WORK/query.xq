@@ -1,36 +1,29 @@
+(: This file generates code for lifeline CABs. :)
 declare variable $nl as xs:string := "&#10;";
-
 declare function local:Event( $eventName as xs:string? ) as xs:string? {
   concat("bpjs.Event('", $eventName, "')" )
 };
-
-declare function local:blockUntilCAB($toBlock as xs:string?, $untilEvent as xs:string?)
-as xs:string? {
-  string-join((
-    "bpj.registerBThread( function(){", $nl,
-    "  ", "bsync( {waitFor:", local:Event($untilEvent),
-    ", block:", local:Event($toBlock) ,"} );",  $nl,
-    "});"
-  ),"")
+declare function local:DynamicEvent( $eventName as xs:string?, $eventId as xs:string ) as xs:string? {
+  concat("bpjs.Event('", $eventName, "'+",$eventId,")" )
 };
 
-declare function local:messageCAB($event as xs:string?, $content as xs:string?)
-as xs:string? {
-  string-join((
-    "bpj.registerBThread( function(){", $nl,
-    "  ", "bsync( {request:bpjs.Event('", $event ,"')});",  $nl,
-    "});"
-  ),"")
+declare function local:lifelineCAB( $chartId as xs:string?, $name as xs:string?, $locationCount as xs:integer ) as xs:string? {
+  let $enterEventNameSeed := concat("enter|", $name, "@")
+  let $leaveEventNameSeed := concat("leave|", $name, "@")
+  return concat(
+    "bpjs.registerBThread( function(){", $nl,
+    "  bSync( {waitFor:", local:Event(concat("chartStart|", $chartId)),"});", $nl,
+    "  for ( var i=1; i<=", $locationCount, "; i++) {", $nl,
+    (: Dealing with waiting for sub-charts goes here. :)
+    "     bsync({request:", local:DynamicEvent($enterEventNameSeed,"i"), ", block:[VisibleEvents, ", local:Event(concat("chartEnd|",$chartId)), "]});", $nl,
+    "     bsync({request:", local:DynamicEvent($leaveEventNameSeed,"i"), "'+i), block:", local:Event(concat("chartEnd|",$chartId)), "});", $nl,
+    "  }", $nl,
+    "})"
+  )
 };
 
-
-
-for $msg at $msgIdx in doc("SimpleLSC.xml")/lsc/message
-let $fromLocEvent := concat("enter|", $msg/@from, "@", $msg/@fromloc)
-let $toLocEvent := concat("enter|", $msg/@to, "@", $msg/@toloc)
-let $msgEvent := concat("messageEvent", "|", $msgIdx)
-return string-join((
-  local:blockUntilCAB( $msgEvent, $fromLocEvent),
-  local:blockUntilCAB( $msgEvent, $toLocEvent),
-  local:messageCAB( $msgEvent, $msg/@content ),
-), $nl )
+for $ll in doc("SimpleLSC.xml")/lsc/lifeline
+let $name := data($ll/@name)
+let $chartId := data($ll/../@id)
+let $count := xs:integer($ll/@location-count)
+return local:lifelineCAB($chartId, $name, $count)

@@ -21,9 +21,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import static java.nio.file.Files.readAllBytes;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -61,7 +65,7 @@ public abstract class BProgram  {
         return evaluateInGlobalContext(scope, script, scriptName);
     }
 
-    public static Object evaluateInGlobalContext(Scriptable scope, String path) {
+    public static Object evaluateInGlobalContext(Scriptable scope, URI path) {
         Path pathObject = get(path);
         try {
             String script = new String(readAllBytes(pathObject));
@@ -189,7 +193,7 @@ public abstract class BProgram  {
         return evaluateInGlobalContext(globalScope, ios, scriptname);
     }
 
-    public Object evaluateInGlobalScope(String path) {
+    public Object evaluateInGlobalScope(URI path) {
         return evaluateInGlobalContext(globalScope, path);
     }
 
@@ -202,7 +206,11 @@ public abstract class BProgram  {
     }
 
     protected void loadJavascriptFile(String path) {
-        evaluateInGlobalScope(getClass().getResource(path).getPath());
+        try {
+            evaluateInGlobalScope(getClass().getResource(path).toURI());
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(BProgram.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

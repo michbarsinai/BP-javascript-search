@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import static bp.eventsets.EventSetConstants.emptySet;
+import static bp.eventsets.Events.emptySet;
 
 /**
  * A statement a BTHread makes about what events it requests, waits for, and blocks.

@@ -8,6 +8,7 @@ import bp.eventsets.EventSet;
 import bp.validation.eventpattern.EventPattern;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
+import org.mozilla.javascript.Scriptable;
 
 /**
  * Tests for a bhtread that adds bthreads as it works.
@@ -20,7 +21,7 @@ public class AddingBthreadsTest {
     BProgram buildProgram() {
         return new BProgram("AddingBthreadsTest") {
             @Override
-            protected void setupProgramScope() {
+            protected void setupProgramScope( Scriptable aScope ) {
                 loadJavascriptFile("AddingBthreads.js");
             }
         };

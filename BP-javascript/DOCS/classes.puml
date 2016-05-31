@@ -53,10 +53,11 @@ package eventsets {
     + events:Set<Event>
   }
 
-  class EventSetConstants {
+  class Events {
     {static} emptySet: EventSet
     {static} allSet: EventSet
     {static} noEvents: Set<BEvent>
+    {static} ofClass( Class ): Set<BEvent>
   }
 
   ExplicitEventSet .up.|> EventSet

@@ -7,6 +7,7 @@ import bp.events.BEvent;
 import bp.validation.eventpattern.EventPattern;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
+import org.mozilla.javascript.Scriptable;
 
 /**
  *
@@ -17,7 +18,7 @@ public class ExternalEventsTest {
     BProgram buildProgram() {
         return new BProgram("ExternalEvents") {
             @Override
-            protected void setupProgramScope() {
+            protected void setupProgramScope( Scriptable aScope ) {
                 loadJavascriptFile("ExternalEvents.js");
             }
         };

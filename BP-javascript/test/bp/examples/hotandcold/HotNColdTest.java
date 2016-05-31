@@ -7,6 +7,7 @@ import bp.bprogram.listeners.StreamLoggerListener;
 import bp.validation.eventpattern.EventPattern;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
+import org.mozilla.javascript.Scriptable;
 
 /**
  * @author orelmosheweinstock
@@ -21,7 +22,7 @@ public class HotNColdTest {
     BProgram buildProgram() {
         return new BProgram("HotAndCold") {
             @Override
-            protected void setupProgramScope() {
+            protected void setupProgramScope( Scriptable aScope ) {
                 loadJavascriptFile("HotNCold.js");
             }
         };

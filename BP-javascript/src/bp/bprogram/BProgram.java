@@ -13,9 +13,9 @@ import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
-import bp.eventsets.EventSetConstants;
-import static bp.eventsets.EventSetConstants.all;
-import static bp.eventsets.EventSetConstants.emptySet;
+import bp.eventsets.Events;
+import static bp.eventsets.Events.all;
+import static bp.eventsets.Events.emptySet;
 import static java.nio.file.Paths.get;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,6 +34,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
+import static java.nio.file.Paths.get;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s and 
@@ -78,7 +79,9 @@ public abstract class BProgram  {
     public static Object evaluateInGlobalContext(Scriptable scope, String script, String scriptName) {
         Context cx = ContextFactory.getGlobal().enterContext();
         cx.setOptimizationLevel(-1); // must use interpreter mode
-        return cx.evaluateString(scope, script, scriptName, 1, null);
+        final Object result = cx.evaluateString(scope, script, scriptName, 1, null);
+        Context.exit();
+        return result;
     }
     
     /**
@@ -437,13 +440,13 @@ public abstract class BProgram  {
             globalScope.put("emptySet", globalScope,
                     Context.javaToJS(emptySet, globalScope));
             globalScope.put("noEvents", globalScope,
-                    Context.javaToJS(EventSetConstants.noEvents, globalScope));
+                    Context.javaToJS(Events.noEvents, globalScope));
             globalScope.put("all", globalScope,
                     Context.javaToJS(all, globalScope));
             
             evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
             
-            setupProgramScope();
+            setupProgramScope( globalScope );
             
         } catch (IOException ex) {
             throw new RuntimeException("Error while setting up global scope", ex );
@@ -455,8 +458,10 @@ public abstract class BProgram  {
     /**
      * The BProgram should set up its scope here (e.g. load the script for BThreads).
      * This method is called after {@link #setupGlobalScope()}.
+     * 
+     * @param scope the scope to set up.
      */
-    protected abstract void setupProgramScope();
+    protected abstract void setupProgramScope( Scriptable scope );
     
     private boolean waitForExternalEvent() throws InterruptedException {
         final BEvent newEvent = recentlyEnquqedExternalEvents.take();

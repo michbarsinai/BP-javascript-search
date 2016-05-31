@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
+import org.mozilla.javascript.Scriptable;
 
 /**
  *
@@ -18,7 +19,7 @@ public class ExternalEventsDaemonTest {
     BProgram buildProgram() {
         return new BProgram("ExternalEventsDaemon") {
             @Override
-            protected void setupProgramScope() {
+            protected void setupProgramScope( Scriptable aScope ) {
                 loadJavascriptFile("ExternalEventsDaemon.js");
             }
             

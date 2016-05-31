@@ -9,7 +9,7 @@ import java.util.Set;
  * Utility class for commonly used event sets.
  * 
  */
-public class EventSetConstants {
+public class Events {
     /**
      * An event set that contains all events and event sets.
      * @author Bertrand Russel
@@ -43,7 +43,10 @@ public class EventSetConstants {
         }
     };
     
-    
     public final static Set<BEvent> noEvents = Collections.emptySet();
+    
+    public static <T extends BEvent> EventSet ofClass( Class<T> cls ) {
+        return new EventsOfClass(cls);
+    }
     
 }

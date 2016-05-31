@@ -9,7 +9,7 @@ import java.io.Serializable;
 import static bp.BProgramControls.debugMode;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
-import bp.eventsets.EventSetConstants;
+import bp.eventsets.Events;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -196,7 +196,7 @@ public class BThread implements Serializable {
     }
     
     private EventSet convertToEventSet( Object jsObject ) {
-        if ( jsObject == null ) return EventSetConstants.emptySet;
+        if ( jsObject == null ) return Events.emptySet;
         
         // This covers event sets AND events.
         if ( jsObject instanceof EventSet ) {

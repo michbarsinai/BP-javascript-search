@@ -6,6 +6,8 @@ import java.util.Set;
 
 /**
  * A set containing all event instances from a class list.
+ * 
+ * @see Events#ofClass(java.lang.Class) 
  */
 
 public class EventsOfClass  implements EventSet {

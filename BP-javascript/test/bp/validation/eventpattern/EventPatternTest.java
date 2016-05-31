@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import bp.events.BEvent;
 
-import static bp.eventsets.EventSetConstants.all;
+import static bp.eventsets.Events.all;
 import static org.junit.Assert.*;
 
 public class EventPatternTest {

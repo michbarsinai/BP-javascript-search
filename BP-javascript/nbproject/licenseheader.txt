@@ -1,0 +1,7 @@
+<#if licenseFirst??>
+${licenseFirst}
+</#if>
+${licensePrefix} Author: Michael Bar-Sinai
+<#if licenseLast??>
+${licenseLast}
+</#if>

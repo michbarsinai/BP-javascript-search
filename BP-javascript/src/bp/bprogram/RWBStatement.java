@@ -38,6 +38,8 @@ public class RWBStatement {
      */
     private final EventSet except;    
     
+    private BThread bthread;
+    
     /**
      * Creates a new request where all fields are set to {@link none}. To be
      * used as a DSL like manner:
@@ -46,8 +48,8 @@ public class RWBStatement {
      * </code>
      * @return an empty statement
      */
-    public static RWBStatement make() {
-        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet);
+    public static RWBStatement make(BThread creator) {
+        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet).setBthread(creator);
     }
     
     public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block, EventSet except) {
@@ -109,6 +111,15 @@ public class RWBStatement {
 
     public EventSet getExcept() {
         return except;
+    }
+
+    public BThread getBthread() {
+        return bthread;
+    }
+
+    public RWBStatement setBthread(BThread bthread) {
+        this.bthread = bthread;
+        return this;
     }
     
     @Override

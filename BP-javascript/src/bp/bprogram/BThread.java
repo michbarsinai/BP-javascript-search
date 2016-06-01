@@ -158,7 +158,7 @@ public class BThread implements Serializable {
     public void bsync(Set<? extends BEvent> requestedEvents,
                       EventSet waitedEvents,
                       EventSet blockedEvents) {
-        bsync( RWBStatement.make().request(requestedEvents)
+        bsync( RWBStatement.make(this).request(requestedEvents)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents) );
     }
@@ -166,7 +166,7 @@ public class BThread implements Serializable {
     public void bsync(BEvent aRequestedEvent,
                       EventSet waitedEvents,
                       EventSet blockedEvents) {
-        bsync( RWBStatement.make().request(aRequestedEvent)
+        bsync( RWBStatement.make(this).request(aRequestedEvent)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents));
     }
@@ -174,7 +174,7 @@ public class BThread implements Serializable {
      public void bsync( NativeObject jsRWB ) {
         Map<String, Object> jRWB = (Map)Context.jsToJava(jsRWB, Map.class);
         
-        RWBStatement stmt = RWBStatement.make();
+        RWBStatement stmt = RWBStatement.make(this);
         Object req = jRWB.get("request");
         if ( req != null ) {
             if ( req instanceof BEvent ) {
@@ -190,6 +190,7 @@ public class BThread implements Serializable {
         
         stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
                    .block( convertToEventSet(jRWB.get("block")) );
+        stmt.setBthread(this);
         
         bsync( stmt );
         
@@ -213,8 +214,6 @@ public class BThread implements Serializable {
             Logger.getLogger(BThread.class.getName()).log(Level.SEVERE, errorMessage);
             throw new IllegalArgumentException( errorMessage);
         }
-        
-       
     }
     
     private void closeGlobalContext() {

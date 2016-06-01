@@ -40,9 +40,9 @@ public class SimpleEventSelectionStrategyTest {
         BEvent expected = eventOne;
         
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().request(eventOne),
-                RWBStatement.make().request(eventOne).waitFor(eventTwo),
-                RWBStatement.make().request(eventOne)
+                RWBStatement.make(null).request(eventOne),
+                RWBStatement.make(null).request(eventOne).waitFor(eventTwo),
+                RWBStatement.make(null).request(eventOne)
         );
         assertEquals( EventSelectionResult.selected(expected), sut.select(new BSyncState(sets, Collections.emptyList())));
     }
@@ -52,9 +52,9 @@ public class SimpleEventSelectionStrategyTest {
         BEvent expected = eventOne;
         
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().request(eventOne),
-                RWBStatement.make().request(eventTwo),
-                RWBStatement.make().block(eventTwo)
+                RWBStatement.make(null).request(eventOne),
+                RWBStatement.make(null).request(eventTwo),
+                RWBStatement.make(null).block(eventTwo)
         );
         assertEquals( EventSelectionResult.selected(expected), sut.select(new BSyncState(sets, Collections.emptyList())));
     }
@@ -62,10 +62,10 @@ public class SimpleEventSelectionStrategyTest {
     @Test
     public void testDeadlock() {
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().request(eventOne),
-                RWBStatement.make().request(eventTwo),
-                RWBStatement.make().block(eventTwo),
-                RWBStatement.make().block(eventOne)
+                RWBStatement.make(null).request(eventOne),
+                RWBStatement.make(null).request(eventTwo),
+                RWBStatement.make(null).block(eventTwo),
+                RWBStatement.make(null).block(eventOne)
         );
         assertEquals( EventSelectionResult.DEADLOCK, sut.select(new BSyncState(sets, Collections.emptyList())));
     }
@@ -73,10 +73,10 @@ public class SimpleEventSelectionStrategyTest {
     @Test
     public void testNoRequests() {
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().waitFor(eventOne),
-                RWBStatement.make().waitFor(eventTwo),
-                RWBStatement.make().block(eventTwo),
-                RWBStatement.make().block(eventOne)
+                RWBStatement.make(null).waitFor(eventOne),
+                RWBStatement.make(null).waitFor(eventTwo),
+                RWBStatement.make(null).block(eventTwo),
+                RWBStatement.make(null).block(eventOne)
         );
         assertEquals( EventSelectionResult.NONE_REQUESTED, sut.select(new BSyncState(sets, Collections.emptyList())));
     }
@@ -84,10 +84,10 @@ public class SimpleEventSelectionStrategyTest {
     @Test
     public void testDeadlockWithExternals() {
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().request(eventOne),
-                RWBStatement.make().request(eventTwo),
-                RWBStatement.make().block(eventTwo),
-                RWBStatement.make().block(eventOne)
+                RWBStatement.make(null).request(eventOne),
+                RWBStatement.make(null).request(eventTwo),
+                RWBStatement.make(null).block(eventTwo),
+                RWBStatement.make(null).block(eventOne)
         );
         List<BEvent> externals = Arrays.asList(eventOne, eventTri, eventTri, eventTwo);
         assertEquals( EventSelectionResult.selectedExternal(eventTri, 1), 
@@ -97,9 +97,9 @@ public class SimpleEventSelectionStrategyTest {
      @Test
     public void testNoInternalRequests() {
         List<RWBStatement> sets = Arrays.asList(
-                RWBStatement.make().waitFor(eventOne),
-                RWBStatement.make().waitFor(eventTri),
-                RWBStatement.make().waitFor(eventTwo)
+                RWBStatement.make(null).waitFor(eventOne),
+                RWBStatement.make(null).waitFor(eventTri),
+                RWBStatement.make(null).waitFor(eventTwo)
         );
         
         List<BEvent> externals = Arrays.asList(eventOne, eventTwo, eventTri, eventTwo);

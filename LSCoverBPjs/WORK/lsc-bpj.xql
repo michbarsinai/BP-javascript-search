@@ -1,6 +1,8 @@
 (: Commonly used code generators :)
 declare namespace lsc = "lscOverBpj";
 
+declare variable $INPUT_FILE := "__INPUT_FILE__"; (: Replaced by pre-processor to real file name :)
+
 declare variable $nl as xs:string := "&#10;";
 
 (: ***************** :
@@ -47,7 +49,7 @@ declare function lsc:End( $chartId as xs:string ) as xs:string {
  declare function lsc:blockUntilCAB($toBlock as xs:string?, $untilEvent as xs:string?)
  as xs:string? {
    concat(
-     "bpjs.registerBThread( function(){", $nl,
+     "bpjs.registerBThread( 'block-until', function(){", $nl,
      "  bsync( {waitFor:", $untilEvent,
      ", block:", $toBlock ,"} );",  $nl,
      "});"

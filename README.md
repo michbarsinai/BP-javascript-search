@@ -5,3 +5,9 @@ This repository contains a javascript-based [BP](www.b-prog.org) library. It use
 **Current version lives in [BP-javascript](BP-javascript).** The other BP libraries will later be merged or updated.
 
 This library was originally created my @moshewe, but was refactored extensively by @michbarsinai, who currently maintains it.
+
+## Change log for the BPjs library.
+### 2016-06-01
+* BProgram's `setupProgramScope` gets a scope as parameter. So no need to call `getGlobalScope`, and it's clearer what to do.
+* `RWBStatement` now knows which BThread instantiated it
+* When a program deadlock, `StreamLoggerListener` would print the `RWBStatement`s of all `BThreads`.

@@ -48,7 +48,7 @@ public class EnabledEvent extends LscEvent {
             return super.equals(other);
             
         } else {
-            return true;
+            return false;
         }
     }
     

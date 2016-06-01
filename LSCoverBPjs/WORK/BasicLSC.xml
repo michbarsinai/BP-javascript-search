@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Sanity-test LSC:
+
+ A            B
+ |   hello    |
+ |===========>|
+ |            |
+ |   world    |
+ |<===========|
+ |            |
+
+
+-->
+<lsc id="lsc101" name="Simple Message Exchange">
+  <lifeline name="A" location-count="2" />
+  <lifeline name="B" location-count="2" />
+  <message from="A" fromloc="1" to="B" toloc="1" content="hello" temperature="hot" exec="execute" />
+  <message from="B" fromloc="2" to="A" toloc="2" content="world" temperature="hot" exec="execute" />
+</lsc>

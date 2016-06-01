@@ -383,7 +383,7 @@ public abstract class BProgram  {
      * Note that the order in the list is arbitrary.
      * @return list of statements in arbitrary order.
      */
-    protected List<RWBStatement> currentStatements() { 
+    public List<RWBStatement> currentStatements() { 
         return bthreads.stream()
                 .map( BThread::getCurrentRwbStatement )
                 .collect( toList() );

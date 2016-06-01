@@ -15,7 +15,39 @@ public abstract class EventSelectionResult {
         R visit( SelectedExternal se );
         R visit( Selected se );
         R visit( Deadlock dl );
-        R visit( NoneRequested ne );
+        R visit( NoneRequested nr );
+    }
+    
+    public static abstract class VoidVisitor implements Visitor<Void> {
+
+        @Override
+        public Void visit(SelectedExternal se) {
+            visitImpl(se);
+            return null;
+        }
+
+        @Override
+        public Void visit(Selected se) {
+            visitImpl(se);
+            return null;
+        }
+
+        @Override
+        public Void visit(Deadlock dl) {
+            visitImpl(dl);
+            return null;
+        }
+
+        @Override
+        public Void visit(NoneRequested nr) {
+            visitImpl(nr);
+            return null;
+        }
+        
+        protected abstract void visitImpl( SelectedExternal se );
+        protected abstract void visitImpl( Selected se );
+        protected abstract void visitImpl( Deadlock dl );
+        protected abstract void visitImpl( NoneRequested nr );
     }
     
     public static final Deadlock DEADLOCK = new Deadlock();

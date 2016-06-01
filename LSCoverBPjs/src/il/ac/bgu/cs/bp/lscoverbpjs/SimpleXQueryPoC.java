@@ -13,7 +13,6 @@ import org.basex.core.Context;
 import org.basex.core.cmd.CreateDB;
 import org.basex.core.cmd.DropDB;
 import org.basex.core.cmd.XQuery;
-import org.xml.sax.InputSource;
 
 /**
  *
@@ -26,26 +25,21 @@ public class SimpleXQueryPoC {
     public static void main(String[] args) throws BaseXException, IOException {
         Context context = new Context();
 
-        System.out.println("=== Reading the library ===");
-        libCode = new String(Files.readAllBytes(Paths.get("lsc-bpj.xql")));
+        System.out.println("Reading the library");
+        libCode = new String(Files.readAllBytes(Paths.get("lsc-bpj.xql"))).replace("__INPUT_FILE__", "BasicLSC.xml");
         
-        System.out.println("=== Generating BPjs code from LSC xml ===");
-        
-        
+        System.out.println("Generating BPjs code from LSC xml ===");
         
         // Create a collection from all XML documents in the specified directory
         CreateDB cdb = new CreateDB("Collection");
-        cdb.setInput(new InputSource(Files.newBufferedReader(Paths.get("SimpleLSC.xml"))));
         cdb.execute(context);
-        
-        
         
         // If the name of the database is omitted in the collection() function,
         // the currently opened database will be referenced
         StringBuilder output = new StringBuilder();
         Stream.of( "messages.xqy", "lifelines.xqy")
                 .forEach( filename -> {
-                    System.out.print("..processing " + filename);
+                    System.out.print(" - processing " + filename);
                     try {
                         output.append( generateQuery(filename).execute(context) );
                         output.append("\n");
@@ -56,7 +50,7 @@ public class SimpleXQueryPoC {
                         output.append("\n");
                         Logger.getLogger(SimpleXQueryPoC.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    System.out.println(".. DONE");
+                    System.out.println("DONE");
                 });
 
         // Drop the database
@@ -64,9 +58,9 @@ public class SimpleXQueryPoC {
         // Close the database context
         context.close();
 
-        System.out.println("*** OUTPUT ****");
-        System.out.println(output.toString());
+        System.out.println("Writing to generated.js...");
         Files.write(Paths.get("generated.js"), Collections.singleton(output.toString()));
+        System.out.println("DONE.");
     }
     
     public static XQuery generateQuery( String filename ) {

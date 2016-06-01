@@ -8,6 +8,12 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 ### 2016-06-01
-* BProgram's `setupProgramScope` gets a scope as parameter. So no need to call `getGlobalScope`, and it's clearer what to do.
-* `RWBStatement` now knows which BThread instantiated it
-* When a program deadlock, `StreamLoggerListener` would print the `RWBStatement`s of all `BThreads`.
+* :arrows_counterclockwise: BProgram's `setupProgramScope` gets a scope as parameter. So no need to call `getGlobalScope`, and it's clearer what to do.
+* :sparkles: `RWBStatement` now knows which BThread instantiated it
+* :sparkles: When a program deadlock, `StreamLoggerListener` would print the `RWBStatement`s of all `BThreads`.
+
+
+
+Legend:
+* :arrows_counterclockwise: Change
+* :sparkles:New feature

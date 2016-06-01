@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ An LSC with some sub-charts.
+=-->
+<lsc id="lsc101" name="Simple Message Exchange">
+  <lifeline name="A" location-count="2" />
+  <lifeline name="B" location-count="6" />
+  <lifeline name="C" location-count="5" />
+  <message from="A" fromloc="1" to="B" toloc="1" content="request" temperature="hot" exec="execute" />
+  <message from="B" fromloc="2" to="C" toloc="1" content="world" temperature="hot" exec="execute" />
+  <lsc id="subChart" data="type:loop, 3">
+    <message from="C" fromLoc="3" to="B" toLoc="4" content="db-data" />
+    <message from="B" fromLoc="5" to="C" toLoc="4" content="OK" />
+  </lsc>
+  <message from="B" fromloc="6" to="A" toloc="2" content="response" temperature="hot" exec="execute" />
+</lsc>

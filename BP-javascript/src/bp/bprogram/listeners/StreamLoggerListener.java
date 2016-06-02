@@ -41,7 +41,7 @@ public class StreamLoggerListener implements BProgramListener {
 
     @Override
     public void superstepDone(BProgram bp, EventSelectionResult.EmptyResult emptyResult) {
-        out.println(" --:" + bp.getName() + " SuperstepDone " + emptyResult.toString());
+        out.println("---:" + bp.getName() + " SuperstepDone " + emptyResult.toString());
         emptyResult.accept(new EmptyResult.VoidVisitor(){
             @Override
             protected void visitImpl(EventSelectionResult.SelectedExternal se) {}

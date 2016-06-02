@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
  Very simple, non-recursive chart.
+
+[A]     [B]     [C]
+ | ping! |       |
+ |••••••>|       |
+ |       |       |
+ | pong! |       |
+ |<••••••|       |
+ |       |       |
+ |      done     |
+ |<••••••••••••••|
+ |       |       |
+
+
 -->
 <lsc id="lsc101" name="Simple Message Exchange">
   <lifeline name="a" location-count="4" />

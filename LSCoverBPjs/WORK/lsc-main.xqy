@@ -14,10 +14,9 @@ declare function local:message( $msg as node() ) as xs:string {
 };
 
 declare function local:lifeline( $ll as node() ) as xs:string {
-  let $name := data($ll/@name)
-  let $chartId := data($ll/../@id)
-  let $count := xs:integer($ll/@location-count)
-  return lsc:lifelineCAB($chartId, $name, $count)
+  lsc:lifelineCAB( data($ll/@name),
+                   data($ll/../@id),
+                   xs:integer($ll/@location-count) )
 };
 
 declare function local:render-childs( $lsc as node() ) as xs:string* {
@@ -35,12 +34,16 @@ declare function local:lsc( $lsc as node() ) as xs:string {
   ), $nl)
 };
 
+(:
+Generate the Javascript code containing the BThreads for the passed node.
+:)
 declare function local:dispatch( $nd as node() ) as xs:string {
   typeswitch( $nd )
     case element(lifeline) return local:lifeline($nd)
     case element(message)  return local:message($nd)
+    (: sync, loop, subchart ....:)
     case element(lsc)      return local:lsc($nd)
     default return concat( "ERROR: NO DISPATCH DESTINATION FOUND for ", $nd)
 };
 
-local:dispatch(doc($INPUT_FILE)/lsc)
+local:dispatch(doc($INPUT_FILE)//lsc)

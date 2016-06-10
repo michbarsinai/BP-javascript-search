@@ -10,9 +10,7 @@ import static bp.BProgramControls.debugMode;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.Events;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -189,7 +187,8 @@ public class BThread implements Serializable {
         }
         
         stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
-                   .block( convertToEventSet(jRWB.get("block")) );
+                   .block( convertToEventSet(jRWB.get("block")) )
+                   .breakUpon(convertToEventSet(jRWB.get("breakUpon")) );
         stmt.setBthread(this);
         
         bsync( stmt );

@@ -16,7 +16,6 @@ import bp.eventselection.SimpleEventSelectionStrategy;
 import bp.eventsets.Events;
 import static bp.eventsets.Events.all;
 import static bp.eventsets.Events.emptySet;
-import static java.nio.file.Paths.get;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.nio.file.Paths.get;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s and 
@@ -291,9 +291,20 @@ public abstract class BProgram  {
         listeners.forEach( l->l.eventSelected(this, anEvent) );
         
         bthreads.forEach( bt -> {if (bt.getCurrentRwbStatement()==null) {
-            System.out.println(bt.getName() + " Has null stmt");
+            System.err.println("SEVERE: " + bt.getName() + " Has null stmt");
         }});
         
+        Set<BThread> toRemove = bthreads.stream()
+                .filter( bt -> bt.getCurrentRwbStatement().getBreakUpon().contains(anEvent) )
+                .collect( toSet() );
+        
+        // Handle breakUpons
+        if ( ! toRemove.isEmpty() ) {
+            bthreads.removeAll(toRemove);
+            toRemove.forEach( e -> listeners.forEach(l -> l.bthreadRemoved(this, e)) );
+        }
+        
+        // See who resumes for the next thread.
         Collection<ResumeBThread> resumes = bthreads.stream()
                 .filter( bt->bt.getCurrentRwbStatement().shouldWakeFor(anEvent) )
                 .map( bt->new ResumeBThread(bt, anEvent) )
@@ -435,14 +446,18 @@ public abstract class BProgram  {
                     BProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
             globalScope = cx.initStandardObjects(importer);
+            
+            // TODO these should be defined in a Javascript preamble, once we can define event sets in JS.
             globalScope.put("bpjs", globalScope,
                     Context.javaToJS(this, globalScope));
             globalScope.put("emptySet", globalScope,
                     Context.javaToJS(emptySet, globalScope));
-            globalScope.put("noEvents", globalScope,
-                    Context.javaToJS(Events.noEvents, globalScope));
             globalScope.put("all", globalScope,
                     Context.javaToJS(all, globalScope));
+            
+            // TODO this should go, now that we have named params for bSync
+            globalScope.put("noEvents", globalScope,
+                    Context.javaToJS(Events.noEvents, globalScope));
             
             evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
             

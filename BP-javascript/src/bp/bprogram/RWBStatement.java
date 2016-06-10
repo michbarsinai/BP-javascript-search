@@ -36,7 +36,7 @@ public class RWBStatement {
     /**
      * If any of these events happen, the stating thread wants to be terminated.
      */
-    private final EventSet except;    
+    private final EventSet breakUpon;    
     
     private BThread bthread;
     
@@ -56,7 +56,7 @@ public class RWBStatement {
         this.request = new HashSet<>(request);
         this.waitFor = waitFor;
         this.block = block;
-        this.except = except;
+        this.breakUpon = except;
     }
 
     public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block) {
@@ -74,26 +74,26 @@ public class RWBStatement {
      * @return a new statement
      */
     public RWBStatement request( Collection<? extends BEvent> toRequest ) {
-        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getExcept());
+        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
     }
     public RWBStatement request( BEvent requestedEvent ) {
         Set<BEvent> toRequest = new HashSet<>();
         toRequest.add(requestedEvent);
-        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getExcept());
+        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
     }
     public RWBStatement request( ExplicitEventSet ees ) {
-        return new RWBStatement(ees.getCollection(), getWaitFor(), getBlock(), getExcept());
+        return new RWBStatement(ees.getCollection(), getWaitFor(), getBlock(), getBreakUpon());
     }
     
     public RWBStatement waitFor( EventSet events ) {
-        return new RWBStatement(getRequest(), events, getBlock(), getExcept());
+        return new RWBStatement(getRequest(), events, getBlock(), getBreakUpon());
     }
 
     public RWBStatement block( EventSet events ) {
-        return new RWBStatement(getRequest(), getWaitFor(), events, getExcept());
+        return new RWBStatement(getRequest(), getWaitFor(), events, getBreakUpon());
     }
     
-    public RWBStatement except( EventSet events ) {
+    public RWBStatement breakUpon( EventSet events ) {
         return new RWBStatement(getRequest(), getWaitFor(), getBlock(), events);
     }
     
@@ -109,8 +109,8 @@ public class RWBStatement {
         return block;
     }
 
-    public EventSet getExcept() {
-        return except;
+    public EventSet getBreakUpon() {
+        return breakUpon;
     }
 
     public BThread getBthread() {
@@ -124,7 +124,7 @@ public class RWBStatement {
     
     @Override
     public String toString() {
-        return String.format("[RWBStatement r:%s w:%s b:%s e:%s]", getRequest(), getWaitFor(), getBlock(), getExcept());
+        return String.format("[RWBStatement r:%s w:%s b:%s x:%s]", getRequest(), getWaitFor(), getBlock(), getBreakUpon());
     }
 
     @Override
@@ -155,7 +155,7 @@ public class RWBStatement {
         if (!Objects.equals(this.getBlock(), other.getBlock())) {
             return false;
         }
-        return Objects.equals(this.getExcept(), other.getExcept());
+        return Objects.equals(this.getBreakUpon(), other.getBreakUpon());
     }
 
 }

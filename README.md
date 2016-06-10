@@ -7,6 +7,15 @@ This repository contains a javascript-based [BP](www.b-prog.org) library. It use
 This library was originally created my @moshewe, but was refactored extensively by @michbarsinai, who currently maintains it.
 
 ## Change log for the BPjs library.
+
+### 2016-06-10
+* :sparkles: Support for `breakUpon` in `bsync`s:
+
+  ````javascript
+  bsync( {request:A, waitFor:B, block:C, breakUpon:D})
+  ````
+
+
 ### 2016-06-01
 * :arrows_counterclockwise: BProgram's `setupProgramScope` gets a scope as parameter. So no need to call `getGlobalScope`, and it's clearer what to do.
 * :sparkles: `RWBStatement` now knows which BThread instantiated it

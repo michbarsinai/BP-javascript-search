@@ -36,6 +36,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
+import org.mozilla.javascript.NativeObject;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s and 
@@ -191,6 +192,17 @@ public abstract class BProgram  {
      */
     public BEvent Event(String name) {
         return new BEvent(name);
+    }
+    
+    /**
+     * Event constructor, called from Javascript, hence the funny capitalization.
+     * @param name name of the event
+     * @param jsData Additional data for the object.
+     * @return an event with the passed name.
+     */
+    public BEvent Event(String name, NativeObject jsData) {
+        Map<String,Object> map = (Map<String,Object>)Context.jsToJava(jsData, Map.class);
+        return new BEvent(name, map);
     }
     
     public JsEventSet EventSet( Function predicate ) {

@@ -9,6 +9,8 @@ This library was originally created my @moshewe, but was refactored extensively 
 ## Change log for the BPjs library.
 
 ### 2016-06-11
+* :sparkles: BEvents now have an associated `data` object. See example [here](BP-javascript/test/bp/examples/eventswithdata/EventsWithData.js)
+
 * :sparkles: New way of creating `BEvent`s: a static method named `named`:
 
   ````java

@@ -3,6 +3,8 @@ package bp.events;
 
 import static bp.BProgramControls.debugMode;
 import bp.eventsets.EventSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,16 +21,29 @@ public class BEvent implements Comparable<BEvent>, EventSet {
 
     private static final AtomicInteger INSTANCE_ID_GEN = new AtomicInteger(0);
     
-    private final String name;
+    /**
+     * Name of the event. Public access, so that the Javascript code feels natural.
+     */
+    public final String name;
+    
+    /**
+     * Extra data for the event. Public access, so that the Javascript code feels natural.
+     */
+    public final Map<String, Object> data;
     
     public static BEvent named( String aName ) {
         return new BEvent(aName);
     }
     
-    public BEvent(String name) {
-        this.name = name;
+    public BEvent(String aName) {
+        this( aName, new HashMap<>() );
     }
-
+    
+    public BEvent( String aName, Map<String,Object> someData ) {
+        name = aName;
+        data = (someData!=null)?someData : new HashMap<>();
+    }
+    
     public BEvent() {
         this( BEvent.class.getSimpleName() + "#" + INSTANCE_ID_GEN.incrementAndGet() );
     }
@@ -42,6 +57,12 @@ public class BEvent implements Comparable<BEvent>, EventSet {
         return name;
     }
 
+    public Map<String, Object> getData() {
+        return data;
+    }
+    
+    
+    
     @Override
     public boolean equals(Object obj) {
         if ( obj == this ) return true;
@@ -49,7 +70,7 @@ public class BEvent implements Comparable<BEvent>, EventSet {
         if ( ! (obj instanceof BEvent) ) return false;
         
         BEvent other = (BEvent) obj;
-        return name.equals(other.getName());
+        return name.equals(other.getName()) && data.equals( other.getData() );
     }
 
     @Override

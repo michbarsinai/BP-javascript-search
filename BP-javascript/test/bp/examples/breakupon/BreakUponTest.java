@@ -19,7 +19,7 @@ public class BreakUponTest {
         return new BProgram("BreakUpon") {
             @Override
             protected void setupProgramScope( Scriptable aScope ) {
-                loadJavascriptFile("BreakUpon.js");
+                loadJavascriptResource("BreakUpon.js");
             }
         };
     }

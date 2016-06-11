@@ -20,7 +20,7 @@ public class ExternalEventsDaemonTest {
         return new BProgram("ExternalEventsDaemon") {
             @Override
             protected void setupProgramScope( Scriptable aScope ) {
-                loadJavascriptFile("ExternalEventsDaemon.js");
+                loadJavascriptResource("ExternalEventsDaemon.js");
             }
             
         };

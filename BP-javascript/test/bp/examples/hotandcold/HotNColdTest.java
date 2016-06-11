@@ -23,7 +23,7 @@ public class HotNColdTest {
         return new BProgram("HotAndCold") {
             @Override
             protected void setupProgramScope( Scriptable aScope ) {
-                loadJavascriptFile("HotNCold.js");
+                loadJavascriptResource("HotNCold.js");
             }
         };
     }

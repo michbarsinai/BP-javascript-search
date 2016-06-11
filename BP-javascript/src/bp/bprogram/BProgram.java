@@ -16,6 +16,7 @@ import bp.eventselection.SimpleEventSelectionStrategy;
 import bp.eventsets.Events;
 import static bp.eventsets.Events.all;
 import static bp.eventsets.Events.emptySet;
+import bp.eventsets.JsEventSet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +34,8 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
-import static java.nio.file.Paths.get;
 import static java.util.stream.Collectors.toSet;
+import static java.nio.file.Paths.get;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s and 
@@ -191,7 +192,11 @@ public abstract class BProgram  {
     public BEvent Event(String name) {
         return new BEvent(name);
     }
-
+    
+    public JsEventSet EventSet( Function predicate ) {
+        return new JsEventSet(predicate);
+    }
+    
     public Object evaluateInGlobalScope(InputStream ios, String scriptname) {
         return evaluateInGlobalContext(globalScope, ios, scriptname);
     }
@@ -208,7 +213,11 @@ public abstract class BProgram  {
         }
     }
 
-    protected void loadJavascriptFile(String path) {
+    /**
+     * Loads a Javascript resource (a file that's included in the .jar).
+     * @param path path of the resource, relative to the class.
+     */
+    protected void loadJavascriptResource(String path) {
         try {
             evaluateInGlobalScope(getClass().getResource(path).toURI());
         } catch (URISyntaxException ex) {

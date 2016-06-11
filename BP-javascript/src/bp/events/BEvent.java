@@ -21,6 +21,10 @@ public class BEvent implements Comparable<BEvent>, EventSet {
     
     private final String name;
     
+    public static BEvent named( String aName ) {
+        return new BEvent(aName);
+    }
+    
     public BEvent(String name) {
         this.name = name;
     }

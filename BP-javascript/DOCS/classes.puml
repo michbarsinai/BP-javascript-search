@@ -6,8 +6,9 @@ legend bottom
 <b>is not an exhaustive list of everything,</b>
 <b>just what you need to know to get started.</b>
 
-The main class, from client code point of view,
-is <i>BProgram</i>.
+The main class, from client code point of view, is <i>BProgram</i>.
+Most cases could probably be handled using <i>SingleResourceBProgram</i>,
+which caters for the common case of a having all the code in a single .js file.
 endlegend
 
 package bprogram {
@@ -25,7 +26,12 @@ package bprogram {
     + externalEvents
   }
 
-  class RWBStatement
+  class RWBStatement {
+    + request: ExplicitEventSet
+    + waitFor: EventSet
+    + block: EventSet
+    + breakUpon: EventSet
+  }
 
   package listenters {
     interface BProgramListener
@@ -33,10 +39,13 @@ package bprogram {
     class StreamLogger ..|> BProgramListener
   }
 
+  class SingleResourceBProgram
+
   BThread *--> "0..1" RWBStatement
   BProgram *--> "1..*" BThread
   BProgram *--> "1..*" BProgramListener: listeners
   BSyncState o--> "1..*" RWBStatement
+  SingleResourceBProgram --|> BProgram
 
 }
 
@@ -99,9 +108,8 @@ package eventselection {
 
 BProgram *--> EventSelectionStrategy: <<arbiter>>
 BEvent ..|> EventSet
-RWBStatement *--> EventSet: waitFor
-RWBStatement *--> EventSet: block
-RWBStatement *--> ExplicitEventSet: request
+RWBStatement *--> "1" ExplicitEventSet
+RWBStatement *--> "3" EventSet
 Selected o-->BEvent : selected event
 }
 @enduml

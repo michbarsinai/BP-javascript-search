@@ -9,6 +9,15 @@ This library was originally created my @moshewe, but was refactored extensively 
 ## Change log for the BPjs library.
 
 ### 2016-06-11
+* :sparkles: New way of creating `BEvent`s: a static method named `named`:
+
+  ````java
+  new BEvent("1stEvent") // old
+  BEvent.named("1stEvent") // new and English-like.
+  ````
+
+  Future usaged include the ability to reuse event instances, but we're not there yet.
+
 * :sparkles: Added support for Javascript definition of event sets:
 
   ````javascript

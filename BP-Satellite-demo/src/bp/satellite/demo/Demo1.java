@@ -24,6 +24,7 @@ import bp.events.BEvent;
 import bp.satellite.demo.events.ObsAlert;
 import bp.satellite.demo.events.PosUpdate;
 import bp.satellite.demo.events.StaticEvents;
+import org.mozilla.javascript.Scriptable;
 /**
  * The main entry point to the demo.
  */
@@ -42,19 +43,19 @@ public class Demo1 extends BProgram {
     }
 
     @Override
-    protected void setupProgramScope() {
+    protected void setupProgramScope( Scriptable scope ) {
 
-        globalScope.put("StartSimulation", globalScope, Context.javaToJS(StaticEvents.StartSimulation, globalScope));
-        globalScope.put("Tick", globalScope, Context.javaToJS(StaticEvents.Tick, globalScope));
-        globalScope.put("LThrust", globalScope, Context.javaToJS(StaticEvents.LThrust, globalScope));
-        globalScope.put("RThrust", globalScope, Context.javaToJS(StaticEvents.RThrust, globalScope));
-        globalScope.put("TakePicture", globalScope, Context.javaToJS(StaticEvents.TakePicture, globalScope));
-        globalScope.put("ObsAvoided", globalScope, Context.javaToJS(StaticEvents.ObsAvoided, globalScope));
-        globalScope.put("obsalert", globalScope, Context.javaToJS(StaticEvents.ObsAlertEvent, globalScope));
-        globalScope.put("posupdate", globalScope, Context.javaToJS(StaticEvents.PosUpdateEvent, globalScope));
+        scope.put("StartSimulation", scope, Context.javaToJS(StaticEvents.StartSimulation, scope));
+        scope.put("Tick", scope, Context.javaToJS(StaticEvents.Tick, scope));
+        scope.put("LThrust", scope, Context.javaToJS(StaticEvents.LThrust, scope));
+        scope.put("RThrust", scope, Context.javaToJS(StaticEvents.RThrust, scope));
+        scope.put("TakePicture", scope, Context.javaToJS(StaticEvents.TakePicture, scope));
+        scope.put("ObsAvoided", scope, Context.javaToJS(StaticEvents.ObsAvoided, scope));
+        scope.put("obsalert", scope, Context.javaToJS(StaticEvents.ObsAlertEvent, scope));
+        scope.put("posupdate", scope, Context.javaToJS(StaticEvents.PosUpdateEvent, scope));
 
-        loadJavascriptFile("globalScopeInit.js");
-        loadJavascriptFile("bthreads/logic.js");
+        loadJavascriptResource("globalScopeInit.js");
+        loadJavascriptResource("bthreads/logic.js");
 
     }
 

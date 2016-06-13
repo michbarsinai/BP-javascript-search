@@ -28,16 +28,11 @@ bpjs.registerBThread("Time and Position update", function () {
     }
 });
 bpjs.registerBThread("Take Pictures", function () {
-    var oldpos = 0;
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});
         if ((e.SatPos % 100) < e.SatVel) {
-            if (e.SatPos - oldpos <= 100) {
-                oldpos = e.SatPos - e.SatVel;
-
-                // Request to take a picture
-                bsync({request: TakePicture, block: AnyPosUpdateEvent});
-            }
+            // Request to take a picture
+            bsync({request: TakePicture, block: AnyPosUpdateEvent});
         }
     }
 });

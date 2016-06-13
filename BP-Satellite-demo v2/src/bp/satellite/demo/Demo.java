@@ -48,7 +48,7 @@ public class Demo extends BProgram {
         scope.put("StartSimulation", scope, Context.javaToJS(StaticEvents.StartSimulation, scope));
         scope.put("Tick", scope, Context.javaToJS(StaticEvents.Tick, scope));
         scope.put("TakePicture", scope, Context.javaToJS(StaticEvents.TakePicture, scope));
-        scope.put("posupdate", scope, Context.javaToJS(StaticEvents.PosUpdateEvent, scope));
+        scope.put("AnyPosUpdateEvent", scope, Context.javaToJS(StaticEvents.PosUpdateEvent, scope));
 
         loadJavascriptResource("globalScopeInit.js");
         loadJavascriptResource("bthreads/logic.js");
@@ -78,7 +78,7 @@ public class Demo extends BProgram {
                     Thread tmrThread = new Thread(() -> {
                         while (true) {
                             try {
-                                Thread.sleep(100);
+                                Thread.sleep(50);
                             } catch (InterruptedException e1) {
                                 e1.printStackTrace();
                             }

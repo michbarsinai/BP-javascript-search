@@ -1,53 +1,72 @@
 bpjs.registerBThread("Time and Position update", function () {
+
+// Local state variables
     var satVel = 1;
     var satPos = 0;
     var simTime = 0;
-
+    // An infinite loop for state update
     while (true) {
-        var LE = bsync({waitFor: [Tick, LThrust, RThrust]});
-        if (Tick.contains(LE)) {
+
+        // Wait for events that affect the state of the b-thread
+        var e = bsync({waitFor: [Tick, LThrust, RThrust]});
+        // Update the state based on the fired event
+        if (e.equals(Tick)) {
+            // Update position and time
             satPos += satVel;
             simTime++;
-            bsync({request: new PosUpdate(simTime,satPos, satVel), block: [LThrust,RThrust,TakePicture,obsalert,ObsAvoided,StartSimulation]});
-        } else if (LThrust.contains(LE)) {
+            // Request to fire a position update event
+            bsync({
+                request: new PosUpdate(simTime, satPos, satVel),
+                block: [LThrust, RThrust, TakePicture, AnyObsAlertEvent, ObsAvoided, StartSimulation]});
+        } else if (e.equals(LThrust)) {
+            // Update Satelite velocity
             satVel += 0.1;
-        } else {
+        } else if (e.equals(RThrust)) {
+            // Update Satelite velocity
             satVel -= 0.1;
         }
-
-
     }
 });
-
 bpjs.registerBThread("Take Pictures", function () {
-    var oldpos=0;
+    var oldpos = 0;
     while (true) {
-        var e = bsync({waitFor: posupdate});
+        var e = bsync({waitFor: AnyPosUpdateEvent});
         if ((e.SatPos % 100) < e.SatVel) {
-            if (e.SatPos-oldpos<100){  
-            }else{
-            bsync({request: TakePicture});
-            oldpos=e.SatPos-e.SatVel;
+            if (e.SatPos - oldpos <= 100) {
+                oldpos = e.SatPos - e.SatVel;
+
+                // Request to take a picture
+                bsync({request: TakePicture, block: AnyPosUpdateEvent});
             }
         }
     }
 });
-
 bpjs.registerBThread("Obstacle avoidance", function () {
- var flag = 0;
+    var flag = false;
     while (true) {
-        var e = bsync({waitFor: [posupdate, obsalert]});
-        /* Is the obstacle in the path of the Satellite? */
-        if (posupdate.contains(e) & flag==1 & (e.SatVel>=((obspos-e.SatPos)/(obsendtime-e.SimTime))) &  (e.SatVel<=((obspos-e.SatPos)/(obsstarttime-e.SimTime)))){
-            bsync({request: RThrust});
-        }else if (posupdate.contains(e) & flag==1 & ((e.SatVel<((obspos-e.SatPos)/(obsendtime-e.SimTime)))|e.SatVel>((obspos-e.SatPos)/(obsstarttime-e.SimTime)))){
-           bsync({request: ObsAvoided}); 
-           flag=0;
-        } else if (obsalert.contains(e) & flag==0){
-            flag=1;
-            var obspos=e.ObsPosition;
-            var obsstarttime=e.ObsStartTime;
-            var obsendtime=e.ObsEndTime;
+        var e = bsync({waitFor: [AnyPosUpdateEvent, AnyObsAlertEvent]});
+
+        if (AnyPosUpdateEvent.contains(e) && flag) {
+
+            // Is the obstacle in the path of the satellite? 
+            if ((e.SatVel >= ((obspos - e.SatPos) / (obsendtime - e.SimTime))) &&
+                    (e.SatVel <= ((obspos - e.SatPos) / (obsstarttime - e.SimTime)))) {
+
+                // Slow the satelite down
+                bsync({request: RThrust});
+
+            } else {
+
+                // Mark that the risk is removed
+                bsync({request: ObsAvoided});
+                flag = false;
+            }
+
+        } else if (AnyObsAlertEvent.contains(e) && !flag) {
+            flag = true;
+            var obspos = e.ObsPosition;
+            var obsstarttime = e.ObsStartTime;
+            var obsendtime = e.ObsEndTime;
         }
     }
 });

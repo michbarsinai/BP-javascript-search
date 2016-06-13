@@ -13,7 +13,7 @@ public class StaticEvents {
     static public BEvent TakePicture = new BEvent("TakePicture");
     static public BEvent ObsAvoided = new BEvent("ObsAvoided");
     
-    public static final EventsOfClass ObsAlertEvent = new EventsOfClass(ObsAlert.class);
-    public static final EventsOfClass PosUpdateEvent = new EventsOfClass(PosUpdate.class);
+    public static final EventsOfClass AnyObsAlertEvent = new EventsOfClass(ObsAlert.class);
+    public static final EventsOfClass AnyPosUpdateEvent = new EventsOfClass(PosUpdate.class);
     
 }

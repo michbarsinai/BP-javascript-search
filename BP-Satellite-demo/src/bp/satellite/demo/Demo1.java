@@ -51,8 +51,8 @@ public class Demo1 extends BProgram {
         scope.put("RThrust", scope, Context.javaToJS(StaticEvents.RThrust, scope));
         scope.put("TakePicture", scope, Context.javaToJS(StaticEvents.TakePicture, scope));
         scope.put("ObsAvoided", scope, Context.javaToJS(StaticEvents.ObsAvoided, scope));
-        scope.put("obsalert", scope, Context.javaToJS(StaticEvents.ObsAlertEvent, scope));
-        scope.put("posupdate", scope, Context.javaToJS(StaticEvents.PosUpdateEvent, scope));
+        scope.put("AnyObsAlertEvent", scope, Context.javaToJS(StaticEvents.AnyObsAlertEvent, scope));
+        scope.put("AnyPosUpdateEvent", scope, Context.javaToJS(StaticEvents.AnyPosUpdateEvent, scope));
 
         loadJavascriptResource("globalScopeInit.js");
         loadJavascriptResource("bthreads/logic.js");
@@ -61,7 +61,7 @@ public class Demo1 extends BProgram {
 
     public static void main(String[] args) throws MalformedURLException, InstantiationException, IllegalAccessException, ClassNotFoundException, InterruptedException {
         
-        BProgramControls.debugMode = false;
+        BProgramControls.debugMode = true;
         
         final Demo1 demo = new Demo1();
         demo.addListener(new StreamLoggerListener());
@@ -72,10 +72,10 @@ public class Demo1 extends BProgram {
                 if (e.equals(StaticEvents.TakePicture)) {
                     gui.takePicture();
                 }
-                if (StaticEvents.ObsAlertEvent.contains(e)) {
+                if (StaticEvents.AnyObsAlertEvent.contains(e)) {
                     gui.obsdetected();
                 }
-                if (StaticEvents.PosUpdateEvent.contains(e)){
+                if (StaticEvents.AnyPosUpdateEvent.contains(e)){
                     gui.time=((PosUpdate)e).SimTime;     
                     gui.pos=((PosUpdate)e).SatPos; 
                     gui.vel=((PosUpdate)e).SatVel;    

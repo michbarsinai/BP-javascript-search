@@ -7,10 +7,10 @@ import bp.events.BEvent;
  */
 
 public class PosUpdate extends BEvent{
-	  public double SatPos;
+	  public float SatPos;
           public int SimTime;
 
-	  public PosUpdate(int SimTime, double SatPos) {
+	  public PosUpdate(int SimTime, float SatPos) {
 	        super();
                 this.SimTime = SimTime;
 	        this.SatPos = SatPos;

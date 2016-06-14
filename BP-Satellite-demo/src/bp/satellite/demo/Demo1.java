@@ -41,7 +41,7 @@ public class Demo1 extends BProgram {
         } );
         
     }
-
+    
     @Override
     protected void setupProgramScope( Scriptable scope ) {
 
@@ -51,11 +51,13 @@ public class Demo1 extends BProgram {
         scope.put("RThrust", scope, Context.javaToJS(StaticEvents.RThrust, scope));
         scope.put("TakePicture", scope, Context.javaToJS(StaticEvents.TakePicture, scope));
         scope.put("ObsAvoided", scope, Context.javaToJS(StaticEvents.ObsAvoided, scope));
+        scope.put("SoftwareUpdate", scope, Context.javaToJS(StaticEvents.SoftwareUpdate, scope));
+        
         scope.put("AnyObsAlertEvent", scope, Context.javaToJS(StaticEvents.AnyObsAlertEvent, scope));
         scope.put("AnyPosUpdateEvent", scope, Context.javaToJS(StaticEvents.AnyPosUpdateEvent, scope));
-
+        
         loadJavascriptResource("globalScopeInit.js");
-        loadJavascriptResource("bthreads/logic.js");
+        loadJavascriptResource("bthreads/baseLogic.js");
 
     }
 
@@ -69,6 +71,11 @@ public class Demo1 extends BProgram {
         demo.addListener(new BPEventListener() {
             @Override
             public void eventSelected(BProgram bp, BEvent e) {
+
+                if (e.equals(StaticEvents.SoftwareUpdate)) {
+                    demo.loadJavascriptResource("bthreads/newLogic.js");
+                }
+
                 if (e.equals(StaticEvents.TakePicture)) {
                     gui.takePicture();
                 }

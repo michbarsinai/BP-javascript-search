@@ -1,9 +1,13 @@
+bpjs.unRegisterBThread("Time and Position update Base");
+bpjs.unRegisterBThread("Take Pictures Base");
+
 bpjs.registerBThread("Time and Position update", function () {
 
-// Local state variables
+    // Local state variables
     var satVel = 1;
-    var satPos = 0;
-    var simTime = 0;
+    var satPos = posBt.satPos;
+    var simTime = posBt.simTime;
+
     // An infinite loop for state update
     while (true) {
 
@@ -14,10 +18,12 @@ bpjs.registerBThread("Time and Position update", function () {
             // Update position and time
             satPos += satVel;
             simTime++;
+
             // Request to fire a position update event
             bsync({
                 request: new PosUpdate(simTime, satPos, satVel),
                 block: [LThrust, RThrust, TakePicture, AnyObsAlertEvent, ObsAvoided, StartSimulation]});
+
         } else if (e.equals(LThrust)) {
             // Update Satelite velocity
             satVel += 0.1;
@@ -27,6 +33,7 @@ bpjs.registerBThread("Time and Position update", function () {
         }
     }
 });
+
 bpjs.registerBThread("Take Pictures", function () {
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});

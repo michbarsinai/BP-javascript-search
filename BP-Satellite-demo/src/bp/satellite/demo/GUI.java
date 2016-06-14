@@ -31,6 +31,7 @@ public class GUI implements Serializable {
     public JFrame window = new JFrame("BP Satellite Simulation");
     public JButton startbutton = new JButton("Start Simulation");
     public JButton obsbutton = new JButton("Enter Obs");
+    public JButton swupdButton = new JButton("SW-Update");
     public ImageIcon picimage = new ImageIcon(getClass().getResource("takingpicture.jpg"));
     public ImageIcon satimage = new ImageIcon(getClass().getResource("satnoobs.jpg"));
     public ImageIcon satobsimage = new ImageIcon(getClass().getResource("satwithobs.jpg"));
@@ -89,10 +90,19 @@ public class GUI implements Serializable {
             @Override
             public void actionPerformed(ActionEvent a) {
                 if (buttonflag) {
-                    System.out.println("bp=" + bp);
-                    bp.enqueueExternalEvent( StaticEvents.StartSimulation );
+                    bp.enqueueExternalEvent(StaticEvents.StartSimulation);
                 }
                 buttonflag = false;
+            }
+        });
+
+        board2.add(swupdButton);
+        swupdButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                bp.enqueueExternalEvent(StaticEvents.SoftwareUpdate);
+                swupdButton.disable();
             }
         });
         telpanel.add(sattimelabel);
@@ -142,9 +152,9 @@ public class GUI implements Serializable {
                     obsstarttimenum = Integer.parseInt(strattimetext.getText());
                     obsendtimenum = Integer.parseInt(endtimetext.getText());
 
-                        ObsAlert obsalert = new ObsAlert(obsstarttimenum, obsendtimenum, obsposnum);
-                        bp.enqueueExternalEvent(obsalert);
-                        
+                    ObsAlert obsalert = new ObsAlert(obsstarttimenum, obsendtimenum, obsposnum);
+                    bp.enqueueExternalEvent(obsalert);
+
                 } catch (NumberFormatException ee) {
                     JOptionPane.showMessageDialog(obstaclepanel, "Please Enter Numbers Only!");
                 }
@@ -189,15 +199,15 @@ public class GUI implements Serializable {
         board.repaint();
         window.repaint();
     }
+
     public void updateguitele() {
         sattimelabel.setText("Time : " + time);
         satposlabel.setText("Position : " + Math.floor(pos * 1000) / 1000);
         satvellabel.setText("Velocity : " + Math.floor(vel * 100) / 100);
     }
 
-
     void obsavoided() {
-        obslabel.setText("The obstacle is out of sat orbit!");   
+        obslabel.setText("The obstacle is out of sat orbit!");
         window.remove(satobsimagelable);
         window.remove(satRTimagelable);
         window.add(satimagelable, BorderLayout.SOUTH);
@@ -205,7 +215,7 @@ public class GUI implements Serializable {
     }
 
     void obsdetected() {
-       obslabel.setText("Obstacle detected!");     
+        obslabel.setText("Obstacle detected!");
         window.remove(satimagelable);
         window.add(satobsimagelable, BorderLayout.SOUTH);
         board.repaint();
@@ -213,7 +223,7 @@ public class GUI implements Serializable {
     }
 
     void RTfire() {
-        obslabel.setText("Collision detected! Maneuver in progress.");    
+        obslabel.setText("Collision detected! Maneuver in progress.");
         window.remove(satobsimagelable);
         window.remove(satimagelable);
         window.add(satRTimagelable, BorderLayout.SOUTH);

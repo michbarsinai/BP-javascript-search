@@ -28,7 +28,7 @@ declare function lsc:messageCAB($fromLoc as xs:string?, $toLoc as xs:string, $co
   )
 };
 
-declare function lsc:lifelineCAB( $chartId as xs:string?, $name as xs:string?, $locationCount as xs:integer ) as xs:string? {
+declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $locationCount as xs:integer ) as xs:string? {
   string-join((
     concat("bpjs.registerBThread( 'lifeline-", $name,"', function(){"),
     concat("  bsync( {waitFor:", lsc:Start($chartId),"} );"),

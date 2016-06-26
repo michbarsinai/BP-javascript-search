@@ -2,6 +2,9 @@ package il.ac.bgu.cs.bp.lscoverbpjs;
 
 import bp.bprogram.listeners.StreamLoggerListener;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import org.basex.core.BaseXException;
 import org.mozilla.javascript.EvaluatorException;
 
@@ -20,6 +23,7 @@ public class LscXmlBpjsRunner {
         
         XQueryRunner transpiler = new XQueryRunner("lsc-main.xqy");
         final String source = transpiler.run(lscFileName);
+        Files.write(Paths.get(lscFileName+".js"), Arrays.asList(source));
         
         try {
             new LscBProgram() {

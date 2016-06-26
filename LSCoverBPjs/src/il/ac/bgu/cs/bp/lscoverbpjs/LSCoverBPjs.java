@@ -20,7 +20,7 @@ public class LSCoverBPjs {
             @Override
             protected String getLscBpjCode() {
                 try {
-                    return new String( Files.readAllBytes(Paths.get("generated.js")));
+                    return new String( Files.readAllBytes(Paths.get("BasicLSC.xml.js")));
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }

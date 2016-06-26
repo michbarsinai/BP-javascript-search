@@ -27,10 +27,8 @@ declare function local:render-childs( $lsc as node() ) as xs:string* {
 
 declare function local:lsc( $lsc as node() ) as xs:string {
   string-join((
-    concat("lsc.startChart('",$lsc/@id,"');"),
     lsc:chartCAB($lsc/@id),
-    local:render-childs($lsc),
-    "lsc.endChart();"
+    local:render-childs($lsc)
   ), $nl)
 };
 

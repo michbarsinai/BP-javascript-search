@@ -5,21 +5,28 @@
  * Author: Michael Bar-Sinai
  */
 
-var LSC = (function(){
+var lsc = (function(){
     var V_VISIBLE = "visible";
     var V_HIDDEN = "hidden";
     return {
       
      visibleEvents: bpjs.EventSet( function(e){
-         return e.data.visibility === V_VISIBLE;
+         return (e.data !== null) ? e.data.visibility === V_VISIBLE : false;
      }),
      
      hiddenEvents: bpjs.EventSet( function(e){
-        return e.data.visibility === V_HIDDEN;
+        return (e.data !== null) ? e.data.visibility === V_HIDDEN : false;
      }),
      
+     Message: function(fromLoc, toLoc, content, chartId ) {
+         return bpjs.Event(fromLoc + "->" + toLoc + ":" + content, 
+                            {type:"message", visibiliy:V_VISIBLE, 
+                             content:content, from:fromLoc, to:toLoc,
+                             chartId:chartId});
+     },
+     
      Enabled: function(e) { 
-         return bpjs.Event("Enabled(" + e.name + ")", {type:"enabled", vent:e});
+         return bpjs.Event("Enabled(" + e.name + ")", {type:"enabled", event:e});
      },
      
      Enter: function( loc, chartId ) {
@@ -31,16 +38,11 @@ var LSC = (function(){
      },
      
      Start: function( chartId ) {
-         return bpjs.Event("ChartStart(" + chartId + ")", {type:"start", chartId:chartId});
+         return bpjs.Event("ChartStart(" + chartId + ")", {type:"start", chartId:chartId, visibility:V_HIDDEN});
      },
      
      End: function( chartId ) {
-         return bpjs.Event("ChartEnd(" + chartId + ")", {type:"end", chartId:chartId});
-     },
-     
-     Message: function( fromLoc, toLoc, content, chartId ) {
-         return bpjs.Event("Message(" + fromLoc +"->" + toLoc + ")", 
-                           {type:"message", from:fromLoc, to:toLoc, content:content, chartId:chartId} );
+         return bpjs.Event("ChartEnd(" + chartId + ")", {type:"end", chartId:chartId, visibility:V_HIDDEN});
      },
      
      name: function(){ return "LSCoBPJS"; }

@@ -4,6 +4,7 @@
 package bp.eventsets;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Function;
 
@@ -27,17 +28,23 @@ public class JsEventSet implements EventSet {
     public boolean contains(Object o) {
         Context ctxt = Context.enter();
         try {
-            Object result = predicate.call(ctxt, predicate, predicate.getParentScope(), new Object[]{o});
             ctxt.setOptimizationLevel(-1);
+            
             try {
+                Object result = predicate.call(ctxt, predicate, predicate.getParentScope(), 
+                                            new Object[]{Context.javaToJS(o, predicate.getParentScope())});
+            
                 Boolean res = (Boolean)Context.jsToJava(result, Boolean.class);
                 if ( res == null ) {
-                    throw new RuntimeException("JS Predicate returned null, not a boolean value.");
+                    throw new RuntimeException("JS Predicate returned null, not a boolean value. " + predicate.toString());
                 }
                 return res;
             } catch ( EvaluatorException ee ) {
                 throw new RuntimeException("JS Predicate did not return a boolean value.", ee);
+            } catch ( EcmaError ee ) {
+                throw new RuntimeException("Error evaluating JS Predicate:" + ee.getMessage(), ee);
             }
+            
             
         } finally {
             Context.exit();

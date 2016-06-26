@@ -54,12 +54,12 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
         
         // Let's see what internal events are requested and not blocked (if any).
         List<BEvent> requestedAndNotBlocked = requested.stream()
-                .filter( req -> !blocked.contains(req) ).collect( Collectors.toList() );
+                .filter( req -> !blocked.contains(req) )
+                .collect( Collectors.toList() );
         
         return requestedAndNotBlocked.isEmpty() ?
                 selectExternal(state.getExternalEvents(), blocked, EventSelectionResult.DEADLOCK)
                 : EventSelectionResult.selected( requestedAndNotBlocked.get( rnd.nextInt(requestedAndNotBlocked.size())) );
-            
     }
     
     private EventSelectionResult selectExternal( List<BEvent> externals, EventSet blocked, EventSelectionResult returnOnEmpty ) {

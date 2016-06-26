@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import static java.nio.file.Files.readAllBytes;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,7 +37,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
-import org.mozilla.javascript.NativeObject;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s
@@ -214,11 +215,10 @@ public abstract class BProgram {
      * @param jsData Additional data for the object.
      * @return an event with the passed name.
      */
-    public BEvent Event(String name, NativeObject jsData) {
-        Map<String, Object> map = (Map<String, Object>) Context.jsToJava(jsData, Map.class);
-        return new BEvent(name, map);
+    public BEvent Event(String name, Object jsData) {
+        return new BEvent(name, jsData);
     }
-
+    
     public JsEventSet EventSet(Function predicate) {
         return new JsEventSet(predicate);
     }
@@ -240,13 +240,28 @@ public abstract class BProgram {
     }
 
     /**
+     * Loads a Javascript resource.
+     * @param path path to the resource, relative to the class of {@code this}.
+     * 
+     * @see #loadJavascriptResource(java.lang.String, boolean) 
+     */
+    protected void loadJavascriptResource( String path ) {
+        loadJavascriptResource(path, false);
+    }
+    
+    /**
      * Loads a Javascript resource (a file that's included in the .jar).
      *
      * @param path path of the resource, relative to the class.
+     * @param absolute is the path global, or relative to the current class.
      */
-    protected void loadJavascriptResource(String path) {
+    protected void loadJavascriptResource(String path, boolean absolute) {
         try {
-            evaluateInGlobalScope(getClass().getResource(path).toURI());
+            final URL resource = (absolute?getClass().getClassLoader().getResource(path):getClass().getResource(path));
+            if ( resource == null ) {
+                throw new RuntimeException("Resource '" + path + "' not found.");
+            }
+            evaluateInGlobalScope(resource.toURI());
         } catch (URISyntaxException ex) {
             Logger.getLogger(BProgram.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -318,8 +333,9 @@ public abstract class BProgram {
      * Quick an dirty b-thread removal.
      *
      * @todo Notify listeners, etc....
-     *
-     * @param bt
+     * @deprecated
+     * 
+     * @param name
      */
     public BThread unRegisterBThread(String name) {
         BThread theBt = null;

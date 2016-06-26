@@ -6,10 +6,10 @@ import java.util.Set;
 
 /**
  * A set containing all event instances from a class list.
- * 
+ * @deprecated As events are now fully describable in Javascript, this class should not be used. 
  * @see Events#ofClass(java.lang.Class) 
  */
-
+@Deprecated
 public class EventsOfClass  implements EventSet {
 
     private final Set<Class<?>> classes = new HashSet<>();

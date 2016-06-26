@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.stream.Collectors.toSet;
+import java.util.stream.Stream;
 
 /**
  * A Javascript BThread (NOT a Java thread!). 
@@ -133,6 +134,7 @@ public class BThread implements Serializable {
     }
 
     public void bsync( RWBStatement aStatement ) {
+        
         currentRwbStatement = aStatement;
         bplog("bsyncing with " + currentRwbStatement);
         openGlobalContext();
@@ -204,6 +206,9 @@ public class BThread implements Serializable {
         
         } else if ( jsObject instanceof NativeArray ) {
             NativeArray arr = (NativeArray) jsObject;
+            if ( Stream.of(arr.getIds()).anyMatch( id -> arr.get(id)==null) ) {
+                throw new RuntimeException("EventSet Array contains null sets.");
+            }
             return ComposableEventSet.anyOf(
               Arrays.asList(arr.getIndexIds()).stream()
                     .map( i ->(EventSet)arr.get(i) )

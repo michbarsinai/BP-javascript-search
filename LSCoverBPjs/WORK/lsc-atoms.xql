@@ -22,14 +22,17 @@ declare function lsc:loc-js( $lifelineName as xs:string?, $varName as xs:string?
 (: ***************** :
  : Events            :
  : ***************** :)
+declare function lsc:Message( $fromLoc as xs:string?, $toLoc as xs:string?, $content as xs:string? ) as xs:string? {
+  concat( "lsc.Message(", $fromLoc, ",", $toLoc, ",'", $content, "')" )
+};
+declare function lsc:Sync( $locations as xs:string?, $chartId as xs:string? ) as xs:string? {
+  concat( "lsc.Sync(", $locations, ",", $chartId, "')" )
+};
 declare function lsc:Enter( $locationName as xs:string, $chartId as xs:string ) as xs:string? {
   concat( "lsc.Enter(", $locationName, ",'", $chartId, "')" )
 };
 declare function lsc:Leave( $locationName as xs:string, $chartId as xs:string  ) as xs:string? {
   concat( "lsc.Leave(", $locationName, ",'", $chartId, "')" )
-};
-declare function lsc:Message( $fromLoc as xs:string?, $toLoc as xs:string?, $content as xs:string? ) as xs:string? {
-  concat( "lsc.Message(", $fromLoc, ",", $toLoc, ",'", $content, "')" )
 };
 declare function lsc:Enabled( $eventString as xs:string ) as xs:string {
   concat( "lsc.Enabled(", $eventString, ")" )

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Two self messages separated by a SYNC.
+
+[A]      [B]
+ | ping   |       
+ |••••••  |
+ |     •  |
+ |<•••••  |
+ |        |
+ |        |
+<===SYNC===>
+ |        |
+ |        | pong
+ |        |••••••
+ |        |     •
+ |        |<•••••
+ |        |
+ ^        ^
+
+-->
+<lsc id="lsc101" name="Simple Message Exchange">
+  <lifeline name="a" location-count="2" />
+  <lifeline name="b" location-count="2" />
+  <message from="a" fromloc="1" to="a" toloc="1" content="ping" temperature="hot" exec="execute" />
+  <sync locations="a@2,b@1" />
+  <message from="b" fromloc="2" to="b" toloc="2" content="pong" temperature="hot" exec="execute" />
+</lsc>

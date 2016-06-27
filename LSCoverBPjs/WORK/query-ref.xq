@@ -17,13 +17,23 @@ return $book/title :)
 }
 </ul> :)
 
+declare variable $nl as xs:string := "&#10;";
+
 declare function local:testFunc($p as xs:string ?)
 as xs:string? {
   let $g := $p
   return fn:substring($g,5)
 };
 
-<ul>
+declare function local:streamAtt($att as xs:string ) as xs:string {
+  string-join( tokenize($att, ","), $nl)
+};
+
+declare function local:location($loc as xs:string?) as xs:string {
+  concat("* Location: ", $loc, ".")
+};
+
+(:<ul>
 {
   for $book at $num in doc("books.xml")/bookstore/book
   let $t := (1 to 5)
@@ -38,3 +48,9 @@ as xs:string? {
   else <li class="{data($book/@category)}">{$num}) {data($title)}<div>{$t}</div></li>
 }
 </ul>
+:)
+(:
+local:location(doc("books.xml")//bookstore/@locations)
+:)
+for $l in tokenize(doc("books.xml")//bookstore/@locations, ",")
+return local:location($l)

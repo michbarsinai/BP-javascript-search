@@ -24,6 +24,17 @@ declare function lsc:messageCAB($fromLoc as xs:string?, $toLoc as xs:string, $co
   )
 };
 
+declare function lsc:syncCAB($locations as xs:string, $chartId as xs:string) as xs:string {
+  let $syncEvent := lsc:Sync($locations, $chartId)
+  let $btName := concat("sync<", $locations , ">")
+  return concat(
+    "bpjs.registerBThread( '", $btName, "', function(){", $nl,
+    "  bsync({request:", lsc:Enabled($syncEvent), " block:", $syncEvent, "});", $nl,
+    "  bsync({request:", $syncEvent, "});", $nl,
+    "}); "
+  )
+};
+
 declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $locationCount as xs:integer ) as xs:string? {
   string-join((
     concat("bpjs.registerBThread( 'lifeline-", $name,"', function(){"),

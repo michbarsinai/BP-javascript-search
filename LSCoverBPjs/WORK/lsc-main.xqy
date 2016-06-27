@@ -18,11 +18,18 @@ declare function local:message( $msg as node() ) as xs:string {
   ), $nl )
 };
 
+declare function local:sync( $sync as node() ) as xs:string {
+  foreach location block(leave(location) until bsync)
+  foreach location block(bsync until enter(location))
+  lsc:syncCAB($sync/locations, $sync/../@id)
+};
+
 declare function local:lifeline( $ll as node() ) as xs:string {
   lsc:lifelineCAB( data($ll/@name),
                    data($ll/../@id),
                    xs:integer($ll/@location-count) )
 };
+
 
 declare function local:render-childs( $lsc as node() ) as xs:string* {
   for $nd in $lsc/node()

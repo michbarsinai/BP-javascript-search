@@ -11,7 +11,7 @@ import org.basex.core.cmd.DropDB;
 import org.basex.core.cmd.XQuery;
 
 /**
- *
+ * Runs an XQuery on an XML file. Returns a String result.
  * @author michael
  */
 public class XQueryRunner {
@@ -81,10 +81,11 @@ public class XQueryRunner {
     }
     
     public static void main(String[] args) throws BaseXException, IOException {
-        final String sourceFile = "lsc-main.xqy";
-        System.out.println("Generating BPjs code from " + sourceFile );
-        XQueryRunner rnr = new XQueryRunner( sourceFile );
-        String result = rnr.run("BasicLSC.xml");
+        final String xquerySource = "query-ref.xq";
+        final String xmlInput = "books.xml";
+        System.out.println("Generating BPjs code from " + xquerySource );
+        XQueryRunner rnr = new XQueryRunner( xquerySource );
+        String result = rnr.run( xmlInput );
         
         System.out.println("DONE.");
         System.out.println("\n\nOutput");

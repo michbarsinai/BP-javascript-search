@@ -20,7 +20,7 @@ import org.mozilla.javascript.EvaluatorException;
 public class LscXmlBpjsRunner {
     
     public static void main(String[] args) throws BaseXException, IOException, InterruptedException {
-        final String lscFileName = "BasicLSC.xml";
+        final String lscFileName = "SelfMessageLsc.xml";
         
         System.out.println("lscFileName = " + lscFileName);
         

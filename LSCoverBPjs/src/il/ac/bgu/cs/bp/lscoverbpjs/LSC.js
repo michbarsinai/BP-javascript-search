@@ -24,6 +24,11 @@ var lsc = (function(){
                              content:content, from:fromLoc, to:toLoc});
      },
      
+     Sync: function( syncId, chartId ){
+         return bpjs.Event("Sync<" + syncId + ">", 
+                            { type:"sync", visibility: V_HIDDEN, chartId:chartId});
+     },
+     
      Enabled: function(e) { 
          return bpjs.Event("Enabled(" + e.name + ")", {type:"enabled", event:e});
      },

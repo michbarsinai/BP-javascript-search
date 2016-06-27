@@ -18,12 +18,8 @@ declare function lsc:messageCAB($fromLoc as xs:string?, $toLoc as xs:string, $co
   return concat(
     "bpjs.registerBThread( '", $btName, "', function(){", $nl,
     "  bsync( {request:", lsc:Enabled($messageEvent),
-    ", block:[", string-join((
-        $messageEvent, lsc:Leave($fromLoc), lsc:Leave($toLoc)),", ")
-    ,"]} );",  $nl,
-    "  bsync( {request:", $messageEvent,
-    ", block:[", string-join((lsc:Leave($fromLoc), lsc:Leave($toLoc)),", ")
-    ,"]} );",  $nl,
+              ", block:", $messageEvent,"} );",  $nl,
+    "  bsync( {request:", $messageEvent,"} );",  $nl,
     "});"
   )
 };
@@ -34,8 +30,8 @@ declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $
     concat("  bsync( {waitFor:", lsc:Start($chartId),"} );"),
     concat("  for ( var i=1; i<=", $locationCount, "; i++) {"),
     (: Dealing with waiting for sub-charts goes here. :)
-    concat("    bsync({request:", lsc:Enter(lsc:loc-js($name,"i")), ", block:[lsc.VISIBLE_EVENTS, ", lsc:End($chartId), "]});"),
-    concat("    bsync({request:", lsc:Leave(lsc:loc-js($name,"i")), ", block:", lsc:End($chartId), "});"),
+    concat("    bsync({request:", lsc:Enter(lsc:loc-js($name,"i"),$chartId), ", block:[lsc.visibleEvents, ", lsc:End($chartId), "]});"),
+    concat("    bsync({request:", lsc:Leave(lsc:loc-js($name,"i"),$chartId), ", block:", lsc:End($chartId), "});"),
     "  }",
     "});"), $nl
   )

@@ -1,15 +1,20 @@
 (:# import lsc-cabs.xql :)
 
 (: Generate the JS for the passed message XML node. :)
+(: TODO need to use lifeline names, not locations. Enabled events should have chart ids. :)
 declare function local:message( $msg as node() ) as xs:string {
   let $fromLoc := lsc:loc($msg/@from, $msg/@fromloc)
   let $toLoc := lsc:loc($msg/@to, $msg/@toloc)
   let $content := $msg/@content
-  let $msgEnabled := lsc:Enabled(lsc:Message($fromLoc, $toLoc, $content))
+  let $msgEvent := lsc:Message($fromLoc, $toLoc, $content)
+  let $msgEnabled := lsc:Enabled($msgEvent)
+  let $chartId := $msg/../@id
   return string-join((
-    lsc:blockUntilCAB( $msgEnabled, lsc:Enter($fromLoc) ),
-    lsc:blockUntilCAB( $msgEnabled, lsc:Enter($toLoc) ),
-    lsc:messageCAB( $fromLoc, $toLoc, $content )
+    lsc:blockUntilCAB( $msgEnabled, lsc:Enter($fromLoc, $chartId) ),
+    lsc:blockUntilCAB( $msgEnabled, lsc:Enter($toLoc, $chartId) ),
+    lsc:messageCAB( $fromLoc, $toLoc, $content ),
+    lsc:blockUntilCAB( lsc:Leave($fromLoc, $chartId), $msgEvent ),
+    lsc:blockUntilCAB( lsc:Leave($toLoc, $chartId), $msgEvent )
   ), $nl )
 };
 

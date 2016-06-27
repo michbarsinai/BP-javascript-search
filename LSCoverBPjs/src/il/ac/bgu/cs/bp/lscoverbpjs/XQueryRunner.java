@@ -3,8 +3,6 @@ package il.ac.bgu.cs.bp.lscoverbpjs;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.basex.core.BaseXException;
 import org.basex.core.Context;
@@ -50,7 +48,9 @@ public class XQueryRunner {
     }
 
     /**
-     * Loads a file, interprets imports.
+     * Loads a file, interprets macros (mostly imports). 
+     * Note that macros have to be in their own line.
+     * 
      * @param filename
      * @return The macro-processed source of the file.
      */

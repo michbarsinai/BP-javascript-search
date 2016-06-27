@@ -18,11 +18,10 @@ var lsc = (function(){
         return (e.data !== null) ? e.data.visibility === V_HIDDEN : false;
      }),
      
-     Message: function(fromLoc, toLoc, content, chartId ) {
+     Message: function(fromLoc, toLoc, content ) {
          return bpjs.Event(fromLoc + "->" + toLoc + ":" + content, 
                             {type:"message", visibiliy:V_VISIBLE, 
-                             content:content, from:fromLoc, to:toLoc,
-                             chartId:chartId});
+                             content:content, from:fromLoc, to:toLoc});
      },
      
      Enabled: function(e) { 
@@ -42,7 +41,7 @@ var lsc = (function(){
      },
      
      End: function( chartId ) {
-         return bpjs.Event("ChartEnd(" + chartId + ")", {type:"end", chartId:chartId, visibility:V_HIDDEN});
+         return bpjs.Event("ChartEnd(" + chartId + ")",   {type:"end", chartId:chartId, visibility:V_HIDDEN});
      },
      
      name: function(){ return "LSCoBPJS"; }

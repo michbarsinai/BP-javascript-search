@@ -23,7 +23,7 @@ public class EventsTest {
     Map<String, BEvent> events = new HashMap<>();
     
     @Before
-    public void setUp() {
+    public void setUp() throws InterruptedException {
         prog = new LscBProgram() {
             @Override
             protected void setupProgramScope(Scriptable aScope) {
@@ -33,20 +33,32 @@ public class EventsTest {
             
             @Override
             protected String getLscBpjCode() {
-                return "events.put('messagePassed1', lsc.Message('f','t','chart-id','content'));\n"
-                        + "events.put('messagePassed2', lsc.Message('f','t','chart-id','content'));\n";
+                return "var i=1;\n"
+                     + "events.put('leaveLiteral',  lsc.Leave('loc@1','chart'));\n"
+                     + "events.put('leaveComputedLit', lsc.Leave('loc@'+1,'chart'));\n"
+                     + "events.put('leaveComputedVar', lsc.Leave('loc@'+i,'chart'));\n";
             }
         };
+        prog.start();
     }
     
 
     @Test
     public void testEquals() throws InterruptedException {
-        prog.start(); // evaluate the Javascript code.
+        BEvent leaveLiteral = events.get("leaveLiteral");
+        BEvent leaveComputedLit = events.get("leaveComputedLit");
+        BEvent leaveComputedVar = events.get("leaveComputedVar");
         
-        assertTrue( events.get("messagePassed1").contains(events.get("messagePassed1")));
-        assertTrue( events.get("messagePassed1").contains(events.get("messagePassed2")));
-        assertTrue( events.get("messagePassed2").contains(events.get("messagePassed1")));
+        assertTrue( leaveLiteral.contains(leaveLiteral) ); // sanity
+        assertTrue( leaveLiteral.contains(leaveComputedLit) );
+        assertTrue( leaveLiteral.contains(leaveComputedVar) );
+        
+        assertTrue( leaveComputedLit.contains(leaveLiteral) );
+        assertTrue( leaveComputedLit.contains(leaveComputedVar) );
+        
+        assertTrue( leaveComputedVar.contains(leaveLiteral) );
+        assertTrue( leaveComputedVar.contains(leaveComputedLit) );
+        
     }
     
 }

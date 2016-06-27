@@ -19,9 +19,16 @@ declare function local:message( $msg as node() ) as xs:string {
 };
 
 declare function local:sync( $sync as node() ) as xs:string {
-  foreach location block(leave(location) until bsync)
-  foreach location block(bsync until enter(location))
-  lsc:syncCAB($sync/locations, $sync/../@id)
+  let $syncEvent := lsc:Sync( $sync/@locations, $sync/../@id )
+  let $syncBlockers := for $loc in tokenize($sync/@locations,",")
+      return lsc:blockUntilCAB( lsc:Enabled($syncEvent), lsc:Enter(lsc:q($loc), $sync/../@id) )
+  let $leaveBlockers := for $loc in tokenize($sync/@locations,",")
+      return lsc:blockUntilCAB( lsc:Leave(lsc:q($loc), $sync/../@id), $syncEvent )
+  return string-join((
+    lsc:syncCAB($sync/@locations, $sync/../@id),
+    $syncBlockers,
+    $leaveBlockers
+  ),$nl)
 };
 
 declare function local:lifeline( $ll as node() ) as xs:string {
@@ -51,6 +58,7 @@ declare function local:dispatch( $nd as node() ) as xs:string {
   typeswitch( $nd )
     case element(lifeline) return local:lifeline($nd)
     case element(message)  return local:message($nd)
+    case element(sync)     return local:sync($nd)
     (: sync, loop, subchart ....:)
     case element(lsc)      return local:lsc($nd)
     default return concat( "ERROR: NO DISPATCH DESTINATION FOUND for ", $nd)

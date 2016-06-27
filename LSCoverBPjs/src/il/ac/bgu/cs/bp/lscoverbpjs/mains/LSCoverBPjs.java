@@ -1,6 +1,7 @@
-package il.ac.bgu.cs.bp.lscoverbpjs;
+package il.ac.bgu.cs.bp.lscoverbpjs.mains;
 
 import bp.bprogram.listeners.StreamLoggerListener;
+import il.ac.bgu.cs.bp.lscoverbpjs.LscBProgram;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;

@@ -26,7 +26,7 @@ declare function lsc:Message( $fromLoc as xs:string?, $toLoc as xs:string?, $con
   concat( "lsc.Message(", $fromLoc, ",", $toLoc, ",'", $content, "')" )
 };
 declare function lsc:Sync( $locations as xs:string?, $chartId as xs:string? ) as xs:string? {
-  concat( "lsc.Sync(", $locations, ",", $chartId, "')" )
+  concat( "lsc.Sync('", $locations, "','", $chartId, "')" )
 };
 declare function lsc:Enter( $locationName as xs:string, $chartId as xs:string ) as xs:string? {
   concat( "lsc.Enter(", $locationName, ",'", $chartId, "')" )
@@ -42,4 +42,13 @@ declare function lsc:Start( $chartId as xs:string ) as xs:string {
 };
 declare function lsc:End( $chartId as xs:string ) as xs:string {
   concat( "lsc.End('", $chartId, "')" )
+};
+
+(: ***************** :
+ : Utilities         :
+ : ***************** :)
+
+(: Put the passed value in Javascript qoutes. :)
+declare function lsc:q( $v as xs:string ) as xs:string {
+  concat("'", $v, "'")
 };

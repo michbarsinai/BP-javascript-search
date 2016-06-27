@@ -29,7 +29,7 @@ declare function lsc:syncCAB($locations as xs:string, $chartId as xs:string) as 
   let $btName := concat("sync<", $locations , ">")
   return concat(
     "bpjs.registerBThread( '", $btName, "', function(){", $nl,
-    "  bsync({request:", lsc:Enabled($syncEvent), " block:", $syncEvent, "});", $nl,
+    "  bsync({request:", lsc:Enabled($syncEvent), ", block:", $syncEvent, "});", $nl,
     "  bsync({request:", $syncEvent, "});", $nl,
     "}); "
   )
@@ -51,7 +51,7 @@ declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $
 declare function lsc:chartCAB( $chartId as xs:string ) as xs:string {
   string-join((
     concat("bpjs.registerBThread('chart:", $chartId,"', function(){"),
-    concat("bsync({request:", lsc:Start($chartId), "});"),
-    concat("bsync({request:", lsc:End($chartId), "});"),
+    concat("  bsync({request:", lsc:Start($chartId), "});"),
+    concat("  bsync({request:", lsc:End($chartId), "});"),
     "});"),$nl)
 };

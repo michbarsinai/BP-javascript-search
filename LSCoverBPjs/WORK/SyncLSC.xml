@@ -3,7 +3,7 @@
  Two self messages separated by a SYNC.
 
 [A]      [B]
- | ping   |       
+ | ping   |
  |••••••  |
  |     •  |
  |<•••••  |

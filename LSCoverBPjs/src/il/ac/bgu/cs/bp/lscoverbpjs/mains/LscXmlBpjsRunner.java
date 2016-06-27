@@ -1,6 +1,7 @@
-package il.ac.bgu.cs.bp.lscoverbpjs;
+package il.ac.bgu.cs.bp.lscoverbpjs.mains;
 
 import bp.bprogram.listeners.StreamLoggerListener;
+import il.ac.bgu.cs.bp.lscoverbpjs.LscBProgram;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -20,7 +21,7 @@ import org.mozilla.javascript.EvaluatorException;
 public class LscXmlBpjsRunner {
     
     public static void main(String[] args) throws BaseXException, IOException, InterruptedException {
-        final String lscFileName = "SelfMessageLsc.xml";
+        final String lscFileName = "SyncLSC.xml";
         
         System.out.println("lscFileName = " + lscFileName);
         

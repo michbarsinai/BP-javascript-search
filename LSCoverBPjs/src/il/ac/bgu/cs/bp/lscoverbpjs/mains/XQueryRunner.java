@@ -1,4 +1,4 @@
-package il.ac.bgu.cs.bp.lscoverbpjs;
+package il.ac.bgu.cs.bp.lscoverbpjs.mains;
 
 import java.io.IOException;
 import java.nio.file.Files;

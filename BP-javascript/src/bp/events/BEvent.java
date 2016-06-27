@@ -7,7 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -122,33 +124,30 @@ public class BEvent implements Comparable<BEvent>, EventSet {
         return equals(o);
     }
     
+    /**
+     * Deep-compare of {@code o1} and {@code o2}. Recurses down these objects, when needed.
+     * 
+     * <em>DOES NOT DEAL WITH CIRCULAR REFERENCES!</em>
+     * 
+     * @param o1
+     * @param o2
+     * @return {@code true} iff both objects are recursively equal
+     */
     private boolean jsObjectsEqual( Object o1, Object o2 ) {
         if ( o1==o2 ) return true;
         if ( o1==null ^ o2==null ) return false;
+        
+        // Concatenated strings in Rhino have a different type. We need to manually
+        // resolve to String semantics, which is what the following lines do.
+        if ( o1 instanceof ConsString ) o1 = o1.toString();
+        if ( o2 instanceof ConsString ) o2 = o2.toString();
+        
         if ( ! o1.getClass().equals(o2.getClass()) ) return false;
         
         // established: o1 and o2 are non-null and of the same class.
-        if ( o1 instanceof ScriptableObject ) {
-            return jsScriptableObjectEqual( (ScriptableObject)o1, (ScriptableObject)o2 );
-        } else {
-            // use direct JS evaluation
-            Context cx = Context.enter();
-            try { 
-                
-                Scriptable scope = cx.initStandardObjects();
-                scope.put("o1", scope, Context.javaToJS(o1, scope));
-                scope.put("o2", scope, Context.javaToJS(o2, scope));
-                Object res = cx.evaluateString(scope, "o1===o2", "<comparison code>",1,null);
-                
-                return (Boolean)res;                
-                
-            } finally {
-                Context.exit();
-            }
-
-        }
-        
-        
+        return ( o1 instanceof ScriptableObject ) 
+            ? jsScriptableObjectEqual( (ScriptableObject)o1, (ScriptableObject)o2 )
+            : o1.equals(o2);
     }
 
     private boolean jsScriptableObjectEqual(ScriptableObject o1, ScriptableObject o2) {

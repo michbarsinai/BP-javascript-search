@@ -57,9 +57,9 @@ public class StreamLoggerListener implements BProgramListener {
                         out.println("XX NULL RWBStatement");
                     } else {
                         if ( rwbs.getBthread() != null ) {
-                            out.println("-  " + rwbs.getBthread().getName());
+                            out.println("* " + rwbs.getBthread().getName());
                         } else {
-                            out.println("- @@unnamed");
+                            out.println("* @@unnamed");
                         }
                         out.println(" request: " + rwbs.getRequest() );
                         out.println(" waitFor: " + rwbs.getWaitFor());

@@ -23,7 +23,7 @@ public class BEventsJsTest {
     Map<String, BEvent> events = new HashMap<>();
     
     @Before
-    public void setUp() {
+    public void setUp() throws InterruptedException {
         prog = new BProgram() {
             @Override
             protected void setupProgramScope(Scriptable aScope) {
@@ -47,17 +47,21 @@ public class BEventsJsTest {
                         + "events.put('withPrimitiveData-diff2', bpjs.Event('withPrimitiveData','string'));\n"
                         + "events.put('withPrimitiveData-diff3', bpjs.Event('withPrimitiveData',{}));\n"
                         + "events.put('withPrimitiveData-diff4', bpjs.Event('withPrimitiveData',function(p){return p;}));\n"
+                        + "events.put('e', bpjs.Event('e'));\n"
+                        + "events.put('m1d', bpjs.Event('metaE',bpjs.Event('e')));\n" 
+                        + "events.put('m2d', bpjs.Event('metaE',bpjs.Event('e')));\n" 
+                        + "events.put('m1i', bpjs.Event('metaE',{e:bpjs.Event('e'), v:'js-string'}));\n" 
+                        + "events.put('m2i', bpjs.Event('metaE',{e:bpjs.Event('e'), v:'js-string'}));"
                         ,
                         "inline script" );
             }
         };
+        prog.start();
     }
     
 
     @Test
     public void testContains_Name() throws InterruptedException {
-        prog.start(); // evaluate the Javascript code.
-        
         BEvent nameOnly1 = events.get("nameOnly1");
         BEvent nameOnly2 = events.get("nameOnly2");
         BEvent nameOnlyDiff = events.get("nameOnly-diff");
@@ -70,8 +74,6 @@ public class BEventsJsTest {
     
     @Test
     public void testContains_Object() throws Exception {
-        prog.start(); // evaluate the Javascript code.
-        
         BEvent withData1 = events.get("withData1");
         BEvent withData2 = events.get("withData2");
         BEvent withData2Ordered = events.get("withData2-reordered");
@@ -96,12 +98,11 @@ public class BEventsJsTest {
         assertFalse( withData1.contains(withDataRec) );
         
         assertTrue( withDataRec2.contains(withDataRec) );
+        
     }
 
     @Test
     public void testContains_Primitives() throws Exception {
-        prog.start(); // evaluate the Javascript code.
-    
         BEvent withPrimitiveData1 = events.get("withPrimitiveData1");
         BEvent withPrimitiveData2 = events.get("withPrimitiveData2");
         BEvent withPrimitiveDataDiff1 = events.get("withPrimitiveData-diff1");
@@ -124,4 +125,21 @@ public class BEventsJsTest {
         assertFalse( withPrimitiveDataDiff4.contains(withPrimitiveData1) );
     }
     
+    @Test
+    public void testMetaObjects() throws Exception {
+        BEvent m1d = events.get("m1d");
+        BEvent m2d = events.get("m2d");
+        BEvent m1i = events.get("m1i");
+        BEvent m2i = events.get("m2i");
+        
+        assertTrue( m1d.contains(m1d) );
+        assertTrue( m1i.contains(m1i) );
+        
+        assertTrue( m1d.contains(m2d) );
+        assertTrue( m1i.contains(m2i) );
+        assertTrue( m2d.contains(m1d) );
+        assertTrue( m2i.contains(m1i) );
+ 
+    }
+  
 }

@@ -4,10 +4,10 @@
  * This BProgram uses the data field of events.
  */
 
-var visibleEvents = bpjs.EventSet( function(e) {
+var visibleEvents = bpjs.EventSet( "visible", function(e) {
     return e.data.eventType === "visible";
 });
-var hiddenEvents = bpjs.EventSet( function(e) {
+var hiddenEvents = bpjs.EventSet( "hidden", function(e) {
     return e.data.eventType === "hidden";
 });
 

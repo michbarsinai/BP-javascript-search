@@ -15,15 +15,13 @@ import org.mozilla.javascript.Function;
 public class JsEventSet implements EventSet {
     
     private final Function predicate;
+    private final String name;
     
-    public JsEventSet( Function aPredicate ) {
+    public JsEventSet( String aName, Function aPredicate ) {
+        name = aName;
         predicate = aPredicate;
     }
-
-    public Function getPredicate() {
-        return predicate;
-    }
-
+    
     @Override
     public boolean contains(Object o) {
         Context ctxt = Context.enter();
@@ -50,5 +48,17 @@ public class JsEventSet implements EventSet {
             Context.exit();
         }
     }
+
+    public Function getPredicate() {
+        return predicate;
+    }
+
+    public String getName() {
+        return name;
+    }
     
+    @Override
+    public String toString() {
+        return "EventSet:" + getName();
+    }
 }

@@ -33,9 +33,9 @@ public class BEventSetsJsTest {
                 aScope.put("eventSets", aScope, Context.javaToJS(eventSets, aScope));
                 aScope.put("test", aScope, Context.javaToJS(BEventSetsJsTest.this, aScope));
                 evaluateInGlobalContext(aScope,
-                        "eventSets.put(\"esName\", bpjs.EventSet( function(e){ return e.name==\"Name\"; }) );\n" +
-                        "eventSets.put(\"esDataObjVizIsViz\", bpjs.EventSet( function(e){ return (e.data != undefined) && e.data.viz===\"viz\"; }) );\n" +
-                        "eventSets.put(\"esDataIsViz\", bpjs.EventSet( function(e){ return e.data==\"viz\"; }) );\n" +
+                        "eventSets.put(\"esName\", bpjs.EventSet( 'x', function(e){ return e.name==\"Name\"; }) );\n" +
+                        "eventSets.put(\"esDataObjVizIsViz\", bpjs.EventSet( 'x',  function(e){ return (e.data != undefined) && e.data.viz===\"viz\"; }) );\n" +
+                        "eventSets.put(\"esDataIsViz\", bpjs.EventSet( 'x',  function(e){ return e.data==\"viz\"; }) );\n" +
                         "events.put( \"eName\", bpjs.Event(\"Name\") );\n" +
                         "events.put( \"eNotName\", bpjs.Event(\"NotName\") );\n" +
                         "events.put( \"eVizObj\", bpjs.Event(\"name\", {viz:\"viz\"}) );\n" +

@@ -3,7 +3,7 @@
 // This script tests the JsEventSet class in the wild.
 // Assuming that Javascript is wild. It is.
 
-var firsts = bpjs.EventSet( function(e){
+var firsts = bpjs.EventSet( "es1", function(e){
     return e.getName().startsWith("1st");
 } );
 

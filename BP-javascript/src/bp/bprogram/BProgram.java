@@ -219,8 +219,8 @@ public abstract class BProgram {
         return new BEvent(name, jsData);
     }
     
-    public JsEventSet EventSet(Function predicate) {
-        return new JsEventSet(predicate);
+    public JsEventSet EventSet(String name, Function predicate) {
+        return new JsEventSet(name, predicate);
     }
 
     public Object evaluateInGlobalScope(InputStream ios, String scriptname) {

@@ -1,7 +1,7 @@
 /* global bpjs */
 
 
-var anEventSet = bpjs.EventSet( function(e) {
+var anEventSet = bpjs.EventSet( "visible", function(e) {
     return e.data !== null ? e.data.eventType === "visible" : false;
 });
 

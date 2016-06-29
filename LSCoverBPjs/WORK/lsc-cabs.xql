@@ -35,12 +35,15 @@ declare function lsc:syncCAB($locations as xs:string, $chartId as xs:string) as 
   )
 };
 
-declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $locationCount as xs:integer ) as xs:string? {
+declare function lsc:lifelineCAB( $name as xs:string?, $chartId as xs:string?, $locationCount as xs:integer, $subchart-bottoms as node()* ) as xs:string? {
   string-join((
     concat("bpjs.registerBThread( 'lifeline-", $name,"', function(){"),
+    lsc:subchartBottomDictionary($subchart-bottoms),
     concat("  bsync( {waitFor:", lsc:Start($chartId),"} );"),
     concat("  for ( var i=1; i<=", $locationCount, "; i++) {"),
-    (: Dealing with waiting for sub-charts goes here. :)
+           "    if (typeof scb[i] !== 'undefined'){",
+    concat("       bsync({waitFor:lsc.Done('", $chartId ,"/'+scb[i]), block:", lsc:End($chartId), "});"),
+           "}",
     concat("    bsync({request:", lsc:Enter(lsc:loc-js($name,"i"),$chartId), ", block:[lsc.visibleEvents, ", lsc:End($chartId), "]});"),
     concat("    bsync({request:", lsc:Leave(lsc:loc-js($name,"i"),$chartId), ", block:", lsc:End($chartId), "});"),
     "  }",
@@ -58,14 +61,15 @@ declare function lsc:chartCAB( $chartId as xs:string ) as xs:string {
 
 declare function lsc:loopCAB( $loopId as xs:string, $ctrl as xs:string, $loop as node() ) as xs:string {
   string-join((
-      concat("bpjs.registerBThread('loop:", $loopId, "function(){')"),
+      concat("bpjs.registerBThread('loop:", $loopId, "', function(){"),
       concat("  bsync({request:" , lsc:Enabled(lsc:Start($loopId)),
-               ", block:lsc.leaveEvents(", lsc:q($loop/@locations), ", ", lsc:q($loop/../@id), ")});"),
+               ", block:lsc.leaveEvents(", lsc:q($loop/@locations), ", ", lsc:q(lsc:chartId($loop/..)), ")});"),
       concat("  for (var loopCtrl=0; loopCtrl<", $ctrl, "; loopCtrl++) {"),
       local:render-childs($loop),
-      concat("    bsync()request:lsc.Start(", lsc:q(concat($loop/../@id, "/", $loopId)), ")};"),
-             "  });",
-      concat("  bsync({request:", lsc:End($loop/@id), ", block:lsc.visibleEvents})"),
+      concat("    bsync({request:lsc.Start(", lsc:q(lsc:chartId($loop)), ")});"),
+      concat("    bsync({request:", lsc:End(lsc:chartId($loop)), ", block:lsc.visibleEvents});"),
+             "  }",
+      concat("  bsync({request:", lsc:Done(lsc:chartId($loop)), ", block:lsc.visibleEvents});"),
              "});"
   ), $nl)
 };

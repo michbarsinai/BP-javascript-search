@@ -17,7 +17,7 @@ declare function local:message( $msg as node() ) as xs:string {
   let $content := $msg/@content
   let $msgEvent := lsc:Message($fromLoc, $toLoc, $content)
   let $msgEnabled := lsc:Enabled($msgEvent)
-  let $chartId := $msg/../@id
+  let $chartId := lsc:chartId($msg/..)
   return string-join((
     lsc:blockUntilCAB( $msgEnabled, lsc:Enter($fromLoc, $chartId) ),
     lsc:blockUntilCAB( $msgEnabled, lsc:Enter($toLoc, $chartId) ),
@@ -28,13 +28,13 @@ declare function local:message( $msg as node() ) as xs:string {
 };
 
 declare function local:sync( $sync as node() ) as xs:string {
-  let $syncEvent := lsc:Sync( $sync/@locations, $sync/../@id )
+  let $syncEvent := lsc:Sync( $sync/@locations, lsc:chartId($sync/..) )
   let $syncBlockers := for $loc in tokenize($sync/@locations,",")
-      return lsc:blockUntilCAB( lsc:Enabled($syncEvent), lsc:Enter(lsc:q($loc), $sync/../@id) )
+      return lsc:blockUntilCAB( lsc:Enabled($syncEvent), lsc:Enter(lsc:q($loc), lsc:chartId($sync/..)) )
   let $leaveBlockers := for $loc in tokenize($sync/@locations,",")
-      return lsc:blockUntilCAB( lsc:Leave(lsc:q($loc), $sync/../@id), $syncEvent )
+      return lsc:blockUntilCAB( lsc:Leave(lsc:q($loc), lsc:chartId($sync/..)), $syncEvent )
   return string-join((
-    lsc:syncCAB($sync/@locations, $sync/../@id),
+    lsc:syncCAB($sync/@locations, lsc:chartId($sync/..)),
     $syncBlockers,
     $leaveBlockers
   ),$nl)
@@ -42,8 +42,9 @@ declare function local:sync( $sync as node() ) as xs:string {
 
 declare function local:lifeline( $ll as node() ) as xs:string {
   lsc:lifelineCAB( data($ll/@name),
-                   data($ll/../@id),
-                   xs:integer($ll/@location-count) )
+                   lsc:chartId($ll/..),
+                   xs:integer($ll/@location-count),
+                   $ll/subchart-bottom )
 };
 
 declare function local:render-childs( $lsc as element() ) as xs:string* {
@@ -51,18 +52,18 @@ declare function local:render-childs( $lsc as element() ) as xs:string* {
 };
 
 declare function local:loop( $loop as item() ) as xs:string {
-  let $loopStartEvent := lsc:Start( $loop/@id )
+  let $loopStartEvent := lsc:Start( lsc:chartId($loop) )
   let $loopBlockers := for $loc in tokenize($loop/@locations,",")
-      return lsc:blockUntilCAB( lsc:Enabled($loopStartEvent), lsc:Enter(lsc:q($loc), $loop/../@id) )
+      return lsc:blockUntilCAB( lsc:Enabled($loopStartEvent), lsc:Enter(lsc:q($loc), lsc:chartId($loop/..)) )
   return string-join((
     $loopBlockers,
-    lsc:loopCAB(data($loop/@id), $loop/@control, $loop)
+    lsc:loopCAB(lsc:chartId($loop), $loop/@control, $loop)
   ), $nl)
 };
 
 declare function local:lsc( $lsc as item() ) as xs:string {
   string-join((
-    lsc:chartCAB($lsc/@id),
+    lsc:chartCAB(lsc:chartId($lsc)),
     local:render-childs($lsc)
   ), $nl)
 };
@@ -81,4 +82,4 @@ declare function local:dispatch( $nd as element() ) as xs:string {
     default return concat( "ERROR: NO DISPATCH DESTINATION FOUND for ", $nd)
 };
 
-local:dispatch(doc($INPUT_FILE)//lsc)
+local:dispatch(doc($INPUT_FILE)/lsc)

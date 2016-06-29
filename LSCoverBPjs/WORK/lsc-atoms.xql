@@ -43,6 +43,9 @@ declare function lsc:Start( $chartId as xs:string ) as xs:string {
 declare function lsc:End( $chartId as xs:string ) as xs:string {
   concat( "lsc.End('", $chartId, "')" )
 };
+declare function lsc:Done( $chartId as xs:string ) as xs:string {
+  concat( "lsc.Done('", $chartId, "')" )
+};
 
 (: ***************** :
  : Utilities         :
@@ -51,4 +54,18 @@ declare function lsc:End( $chartId as xs:string ) as xs:string {
 (: Put the passed value in Javascript qoutes. :)
 declare function lsc:q( $v as xs:string ) as xs:string {
   concat("'", $v, "'")
+};
+
+(: Build the dictionary of subchart bottoms for lifelineCAB :)
+declare function lsc:subchartBottomDictionary( $scBottoms as node()* ) as xs:string {
+  string-join((
+    "var scb={};",
+    for $b in $scBottoms return concat("scb[", $b/@loc ,"]=", lsc:q($b/@subchart-id), ";")
+  ),$nl)
+};
+
+(: return a path of ids, ending at the passed node. :)
+declare function lsc:chartId( $nd as node()? ) as xs:string {
+  let $prefix := if (boolean($nd/..)) then lsc:chartId($nd/..) else ""
+  return string-join(($prefix, $nd/@id), "/")
 };

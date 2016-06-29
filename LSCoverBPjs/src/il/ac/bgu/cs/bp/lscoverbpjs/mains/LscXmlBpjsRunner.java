@@ -23,7 +23,8 @@ import org.mozilla.javascript.EvaluatorException;
 public class LscXmlBpjsRunner {
     
     public static void main(String[] args) throws BaseXException, IOException, InterruptedException {
-        final String lscFileName = "SyncLSC.xml";
+//        final String lscFileName = "BasicLSC.xml";
+        final String lscFileName = "LoopLSC.xml";
         
         System.out.println("lscFileName = " + lscFileName);
         
@@ -51,7 +52,7 @@ public class LscXmlBpjsRunner {
             System.out.println( bxe.getSource() );
                     
         } catch ( EvaluatorException ee ) {
-            System.out.println("Evaluation Error: " + ee.getMessage());
+            System.out.println("Evaluation Error: " + ee.getMessage() + "(at " + ee.lineNumber() + ":" + ee.columnNumber() + ")");
             System.out.println("Source:");
             System.out.println( sourceRef );
         }

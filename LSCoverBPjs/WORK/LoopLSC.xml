@@ -17,13 +17,13 @@
 -->
 <lsc id="lscWithLoop" name="Loopi McLoopface">
   <lifeline name="A" location-count="3">
-    <bottom chartId="theLoop" loc="3"/>
+    <subchart-bottom subchart-id="theLoop" loc="3"/>
   </lifeline>
   <lifeline name="B" location-count="3">
-    <bottom chartId="theLoop" loc="3"/>
+    <subchart-bottom subchart-id="theLoop" loc="3"/>
   </lifeline>
   <message from="A" fromloc="1" to="B" toloc="1" content="hello" temperature="hot" exec="execute" />
-  <loop id="theLoop" control="3" locations="a@2,b@2">
+  <loop id="theLoop" control="3" locations="A@2,B@2">
     <lifeline name="A" location-count="1" />
     <lifeline name="B" location-count="1" />
     <message from="B" fromloc="1" to="A" toloc="1" content="world" temperature="hot" exec="execute" />

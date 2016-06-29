@@ -10,16 +10,16 @@ var lsc = (function(){
     var V_HIDDEN = "hidden";
     return {
       
-     visibleEvents: bpjs.EventSet( function(e){
+     visibleEvents: bpjs.EventSet( "VisibleEvents", function(e){
          return (e.data !== null) ? e.data.visibility === V_VISIBLE : false;
      }),
      
-     hiddenEvents: bpjs.EventSet( function(e){
+     hiddenEvents: bpjs.EventSet( "HiddenEvents", function(e){
         return (e.data !== null) ? e.data.visibility === V_HIDDEN : false;
      }),
      
      terminationEvents: function( chartId ) {
-         return bpjs.EventSet( function(e) {
+         return bpjs.EventSet( "terminations(" + chartId + ")", function(e) {
             return e.data.group==="termination" && e.data.chartId===chartId; 
          });
      },
@@ -32,8 +32,8 @@ var lsc = (function(){
       * @returns {EventSet}
       */
      leaveEvents: function( locationList, chartId ) {
-       return bpjs.EventSet( function(e){
-           return (e.data.type==="leave") 
+       return bpjs.EventSet( "leaveEvents(" + locationList +")", function(e){
+           return (e.data.type === "leave") 
                    && (e.data.chartId === chartId)
                    && (locationList.indexOf(e.data.location) !== -1);
        });  
@@ -68,6 +68,10 @@ var lsc = (function(){
      
      End: function( chartId ) {
          return bpjs.Event("ChartEnd(" + chartId + ")",   {group:"termination", type:"end", chartId:chartId, visibility:V_HIDDEN});
+     },
+     
+     Done: function( chartId ) {
+         return bpjs.Event("ChartDone(" + chartId + ")",   {group:"termination", type:"done", chartId:chartId, visibility:V_HIDDEN});
      },
      
      name: function(){ return "LSCoBPJS"; }

@@ -18,6 +18,27 @@ var lsc = (function(){
         return (e.data !== null) ? e.data.visibility === V_HIDDEN : false;
      }),
      
+     terminationEvents: function( chartId ) {
+         return bpjs.EventSet( function(e) {
+            return e.data.group==="termination" && e.data.chartId===chartId; 
+         });
+     },
+     
+     /**
+      * Creates an event set containing all leave evetns from the passed location 
+      * list in the given chart.
+      * @param {String} locationList list of locations, comma separated.
+      * @param {type} chartId id of chart the locations are in
+      * @returns {EventSet}
+      */
+     leaveEvents: function( locationList, chartId ) {
+       return bpjs.EventSet( function(e){
+           return (e.data.type==="leave") 
+                   && (e.data.chartId === chartId)
+                   && (locationList.indexOf(e.data.location) !== -1);
+       });  
+     },
+     
      Message: function(fromLoc, toLoc, content ) {
          return bpjs.Event(fromLoc + "->" + toLoc + ":" + content, 
                             {type:"message", visibiliy:V_VISIBLE, 
@@ -46,7 +67,7 @@ var lsc = (function(){
      },
      
      End: function( chartId ) {
-         return bpjs.Event("ChartEnd(" + chartId + ")",   {type:"end", chartId:chartId, visibility:V_HIDDEN});
+         return bpjs.Event("ChartEnd(" + chartId + ")",   {group:"termination", type:"end", chartId:chartId, visibility:V_HIDDEN});
      },
      
      name: function(){ return "LSCoBPJS"; }

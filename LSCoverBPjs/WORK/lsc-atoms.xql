@@ -3,7 +3,7 @@ declare namespace lsc  = "/bp/js/lsc";
 
 declare variable $INPUT_FILE := "__INPUT_FILE__"; (: Replaced by pre-processor to real file name :)
 
-declare variable $nl as xs:string := "&#10;";
+declare variable $nl as xs:string := "&#10;"; (: newline character :)
 
 (: ***************** :
  : Constant Names    :

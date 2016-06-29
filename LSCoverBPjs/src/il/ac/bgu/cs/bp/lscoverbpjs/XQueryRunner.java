@@ -1,4 +1,4 @@
-package il.ac.bgu.cs.bp.lscoverbpjs.mains;
+package il.ac.bgu.cs.bp.lscoverbpjs;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +16,7 @@ import org.basex.core.cmd.XQuery;
  */
 public class XQueryRunner {
 
-    private final String source;
+    private String source;
     
     public XQueryRunner( String filename ) {
         source = loadFile( filename );
@@ -32,8 +32,8 @@ public class XQueryRunner {
 
                 // If the name of the database is omitted in the collection() function,
                 // the currently opened database will be referenced
-                return new XQuery( source.replace("__INPUT_FILE__", subject)).execute(context);
-
+                source = source.replace("__INPUT_FILE__", subject);
+                return new XQuery( source ).execute(context);
 
             } finally {
                 // Drop the database
@@ -42,7 +42,7 @@ public class XQueryRunner {
                 context.close();
             }
         } catch (BaseXException ex) {
-            throw new RuntimeException( ex );
+            throw new XQueryRunnerException( source,  "Error while parsing xquery code", ex );
         }
         
     }
@@ -78,19 +78,6 @@ public class XQueryRunner {
         } else {
             throw new RuntimeException("Unknown macro directive: " + comps[0] );
         }
-    }
-    
-    public static void main(String[] args) throws BaseXException, IOException {
-        final String xquerySource = "query-ref.xq";
-        final String xmlInput = "books.xml";
-        System.out.println("Generating BPjs code from " + xquerySource );
-        XQueryRunner rnr = new XQueryRunner( xquerySource );
-        String result = rnr.run( xmlInput );
-        
-        System.out.println("DONE.");
-        System.out.println("\n\nOutput");
-        System.out.println("------");
-        System.out.println( result );
     }
     
 }

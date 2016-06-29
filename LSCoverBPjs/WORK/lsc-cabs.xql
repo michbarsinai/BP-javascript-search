@@ -53,5 +53,19 @@ declare function lsc:chartCAB( $chartId as xs:string ) as xs:string {
     concat("bpjs.registerBThread('chart:", $chartId,"', function(){"),
     concat("  bsync({request:", lsc:Start($chartId), "});"),
     concat("  bsync({request:", lsc:End($chartId), "});"),
-    "});"),$nl)
+           "});"),$nl)
+};
+
+declare function lsc:loopCAB( $loopId as xs:string, $ctrl as xs:string, $loop as node() ) as xs:string {
+  string-join((
+      concat("bpjs.registerBThread('loop:", $loopId, "function(){')"),
+      concat("  bsync({request:" , lsc:Enabled(lsc:Start($loopId)),
+               ", block:lsc.leaveEvents(", lsc:q($loop/@locations), ", ", lsc:q($loop/../@id), ")});"),
+      concat("  for (var loopCtrl=0; loopCtrl<", $ctrl, "; loopCtrl++) {"),
+      local:render-childs($loop),
+      concat("    bsync()request:lsc.Start(", lsc:q(concat($loop/../@id, "/", $loopId)), ")};"),
+             "  });",
+      concat("  bsync({request:", lsc:End($loop/@id), ", block:lsc.visibleEvents})"),
+             "});"
+  ), $nl)
 };

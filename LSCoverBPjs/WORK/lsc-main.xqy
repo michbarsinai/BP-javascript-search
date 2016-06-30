@@ -54,7 +54,7 @@ declare function local:render-childs( $lsc as element() ) as xs:string* {
 declare function local:loop( $loop as item() ) as xs:string {
   let $loopStartEvent := lsc:Start( lsc:chartId($loop) )
   let $loopBlockers := for $loc in tokenize($loop/@locations,",")
-      return lsc:blockUntilCAB( lsc:Enabled($loopStartEvent), lsc:Enter(lsc:q($loc), lsc:chartId($loop/..)) )
+      return lsc:blockUntilCAB( lsc:Enabled($loopStartEvent), lsc:Leave(lsc:q($loc), lsc:chartId($loop/..)) )
   return string-join((
     $loopBlockers,
     lsc:loopCAB(lsc:chartId($loop), $loop/@control, $loop)

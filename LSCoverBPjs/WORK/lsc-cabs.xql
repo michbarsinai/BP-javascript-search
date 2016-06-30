@@ -62,11 +62,12 @@ declare function lsc:chartCAB( $chartId as xs:string ) as xs:string {
 declare function lsc:loopCAB( $loopId as xs:string, $ctrl as xs:string, $loop as node() ) as xs:string {
   string-join((
       concat("bpjs.registerBThread('loop:", $loopId, "', function(){"),
-      concat("  bsync({request:" , lsc:Enabled(lsc:Start($loopId)),
-               ", block:lsc.leaveEvents(", lsc:q($loop/@locations), ", ", lsc:q(lsc:chartId($loop/..)), ")});"),
+      concat("  bsync({request:" , lsc:Enabled(lsc:Start($loopId)), "});"),
+      (: concat("  bsync({request:" , lsc:Enabled(lsc:Start($loopId)),
+               ", block:lsc.leaveEvents(", lsc:q($loop/@locations), ", ", lsc:q(lsc:chartId($loop/..)), ")});"), :)
       concat("  for (var loopCtrl=0; loopCtrl<", $ctrl, "; loopCtrl++) {"),
       local:render-childs($loop),
-      concat("    bsync({request:lsc.Start(", lsc:q(lsc:chartId($loop)), ")});"),
+      concat("    bsync({request:lsc.Start(", lsc:q(lsc:chartId($loop)), "), block:lsc.visibleEvents});"),
       concat("    bsync({request:", lsc:End(lsc:chartId($loop)), ", block:lsc.visibleEvents});"),
              "  }",
       concat("  bsync({request:", lsc:Done(lsc:chartId($loop)), ", block:lsc.visibleEvents});"),

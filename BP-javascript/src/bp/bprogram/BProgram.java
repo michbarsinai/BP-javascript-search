@@ -218,7 +218,7 @@ public abstract class BProgram {
     public BEvent Event(String name, Object jsData) {
         return new BEvent(name, jsData);
     }
-    
+
     public JsEventSet EventSet(String name, Function predicate) {
         return new JsEventSet(name, predicate);
     }
@@ -241,14 +241,15 @@ public abstract class BProgram {
 
     /**
      * Loads a Javascript resource.
+     *
      * @param path path to the resource, relative to the class of {@code this}.
-     * 
-     * @see #loadJavascriptResource(java.lang.String, boolean) 
+     *
+     * @see #loadJavascriptResource(java.lang.String, boolean)
      */
-    protected void loadJavascriptResource( String path ) {
+    protected void loadJavascriptResource(String path) {
         loadJavascriptResource(path, false);
     }
-    
+
     /**
      * Loads a Javascript resource (a file that's included in the .jar).
      *
@@ -257,8 +258,8 @@ public abstract class BProgram {
      */
     protected void loadJavascriptResource(String path, boolean absolute) {
         try {
-            final URL resource = (absolute?getClass().getClassLoader().getResource(path):getClass().getResource(path));
-            if ( resource == null ) {
+            final URL resource = (absolute ? getClass().getClassLoader().getResource(path) : getClass().getResource(path));
+            if (resource == null) {
                 throw new RuntimeException("Resource '" + path + "' not found.");
             }
             evaluateInGlobalScope(resource.toURI());
@@ -322,7 +323,7 @@ public abstract class BProgram {
      */
     public void registerBThread(BThread bt) {
         if (started) {
-            bplog("Queued " + bt.getName());
+            bplog("Registered " + bt.getName());
             recentlyRegisteredBthreads.add(bt);
         } else {
             add(bt);
@@ -332,9 +333,10 @@ public abstract class BProgram {
     /**
      * Quick an dirty b-thread removal.
      *
+     * @return The b-thread object we deleted.
      * @todo Notify listeners, etc....
      * @deprecated
-     * 
+     *
      * @param name
      */
     public BThread unRegisterBThread(String name) {
@@ -350,6 +352,7 @@ public abstract class BProgram {
 
         if (theBt != null) {
             bthreads.remove(theBt);
+            bplog("Unregistered " + theBt.getName());
         }
 
         return theBt;

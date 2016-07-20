@@ -52,6 +52,7 @@ public class GUI implements Serializable {
     public JTextField strattimetext = new JTextField("250", 5);
     public JTextField endtimetext = new JTextField("500", 5);
     public JTextField postext = new JTextField("300", 5);
+    public JPanel obstaclepanel = new JPanel();
     int obsposnum, obsstarttimenum, obsendtimenum, imagecount = 1;
     boolean buttonflag = true;
     public double pos = 0;
@@ -75,7 +76,6 @@ public class GUI implements Serializable {
         // The board
         JPanel board2 = new JPanel();
         board = new JPanel();
-        JPanel obstaclepanel = new JPanel();
         JPanel timeobstaclepanel = new JPanel();
         JPanel posobstaclepanel = new JPanel();
         JPanel telpanel = new JPanel();
@@ -89,10 +89,8 @@ public class GUI implements Serializable {
 
             @Override
             public void actionPerformed(ActionEvent a) {
-                if (buttonflag) {
-                    bp.enqueueExternalEvent(StaticEvents.StartSimulation);
-                }
-                buttonflag = false;
+                bp.enqueueExternalEvent(StaticEvents.StartSimulation);
+                startbutton.setEnabled(false);
             }
         });
 
@@ -102,7 +100,7 @@ public class GUI implements Serializable {
             @Override
             public void actionPerformed(ActionEvent a) {
                 bp.enqueueExternalEvent(StaticEvents.SoftwareUpdate);
-                swupdButton.disable();
+                swupdButton.setEnabled(false);
             }
         });
         telpanel.add(sattimelabel);
@@ -172,7 +170,6 @@ public class GUI implements Serializable {
         telpanel.setBorder(telborder);
 
         board.add(telpanel);
-        board.add(obstaclepanel);
         board.setLayout(new GridLayout(3, 1));
 
         // Add the boards and the message component to the window
@@ -218,6 +215,7 @@ public class GUI implements Serializable {
         obslabel.setText("Obstacle detected!");
         window.remove(satimagelable);
         window.add(satobsimagelable, BorderLayout.SOUTH);
+        obsbutton.setEnabled(false);
         board.repaint();
         window.repaint();
     }
@@ -228,5 +226,28 @@ public class GUI implements Serializable {
         window.remove(satimagelable);
         window.add(satRTimagelable, BorderLayout.SOUTH);
         window.repaint();
+    }
+
+    void LTfire() {
+        obslabel.setText("Velocity Recovery in progress..");
+        window.remove(satobsimagelable);
+        window.remove(satimagelable);
+        window.add(satLTimagelable, BorderLayout.SOUTH);
+        window.repaint();
+    }
+
+    void GuiUpdate() {
+        obslabel.setText("Collision detected! Maneuver in progress.");
+        board.add(obstaclepanel);
+        window.repaint();
+    }
+
+    void VelRec() {
+        obslabel.setText("The obstacle is out of sat orbit! Sat in n"
+                + "ominal velocity");
+        window.remove(satLTimagelable);
+        window.add(satimagelable, BorderLayout.SOUTH);
+        window.repaint();
+        obsbutton.setEnabled(true);
     }
 }

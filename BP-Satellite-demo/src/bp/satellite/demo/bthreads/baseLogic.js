@@ -1,3 +1,5 @@
+//bpjs.unRegisterBThread("Time and Position update");
+
 bpjs.registerBThread("Time and Position update Base", function () {
     posBt=this;
     

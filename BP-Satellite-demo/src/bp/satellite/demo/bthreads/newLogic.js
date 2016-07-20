@@ -37,35 +37,52 @@ bpjs.registerBThread("Time and Position update", function () {
 bpjs.registerBThread("Take Pictures", function () {
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});
-        if ((e.SatPos % 100) < e.SatVel) {
+        if ((e.SatPos % 100) < (e.SatVel)) {
             // Request to take a picture
             bsync({request: TakePicture, block: AnyPosUpdateEvent});
         }
     }
 });
 bpjs.registerBThread("Obstacle avoidance", function () {
-    var flag = false;
+    var flagobs = false;
+    var flagvel = false;
     while (true) {
         var e = bsync({waitFor: [AnyPosUpdateEvent, AnyObsAlertEvent]});
 
-        if (AnyPosUpdateEvent.contains(e) && flag) {
+        if (AnyPosUpdateEvent.contains(e) && (flagobs||flagvel)) {
 
             // Is the obstacle in the path of the satellite? 
             if ((e.SatVel >= ((obspos - e.SatPos) / (obsendtime - e.SimTime))) &&
-                    (e.SatVel <= ((obspos - e.SatPos) / (obsstarttime - e.SimTime)))) {
+                    (e.SatVel <= ((obspos - e.SatPos) / (obsstarttime - e.SimTime))) &&
+                    (obsstarttime>=e.SimTime) && (obspos>=e.SatPos)) {
 
                 // Slow the satelite down
                 bsync({request: RThrust});
 
-            } else {
+            } 
+            if ((e.SatVel >= ((obspos - e.SatPos) / (obsendtime - e.SimTime))) &&
+                    (e.SatVel <= ((obspos - e.SatPos) / (obsstarttime - e.SimTime))) &&
+                    (obsstarttime>=e.SimTime) && (obspos>=e.SatPos)) {
+
+                // Slow the satelite down
+                bsync({request: RThrust});
+                flagvel=true;
+
+           }
+           if(e.SimTime>=obsendtime && e.SatVel<1 && flagvel) {
+               bsync({request: LThrust}); 
+           }else if(flagvel==true && e.SatVel==1 && flagobs == false ) {
+               flagvel=false;
+               bsync({request:VelRecovery });
+           }else{
 
                 // Mark that the risk is removed
                 bsync({request: ObsAvoided});
-                flag = false;
+                flagobs = false;
             }
-
-        } else if (AnyObsAlertEvent.contains(e) && !flag) {
-            flag = true;
+        } else if (AnyObsAlertEvent.contains(e) && !flagobs) {
+            flagobs = true;
+            flagvel=true;
             var obspos = e.ObsPosition;
             var obsstarttime = e.ObsStartTime;
             var obsendtime = e.ObsEndTime;

@@ -14,6 +14,9 @@ public class StaticEvents {
     static public BEvent ObsAvoided = new BEvent("ObsAvoided");
     static public BEvent SoftwareUpdate = new BEvent("SoftwareUpdate");
     static public BEvent VelRecovery = new BEvent("VelRecovery");
+    static public BEvent RollBack = new BEvent("RollBack");
+    static public BEvent RollBackDisable = new BEvent("RollBackDisable");
+    static public BEvent RollBackEnable = new BEvent("RollBackEnable");
     
     public static final EventsOfClass AnyObsAlertEvent = new EventsOfClass(ObsAlert.class);
     public static final EventsOfClass AnyPosUpdateEvent = new EventsOfClass(PosUpdate.class);

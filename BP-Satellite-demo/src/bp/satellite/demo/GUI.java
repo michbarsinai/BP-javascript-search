@@ -32,11 +32,12 @@ public class GUI implements Serializable {
     public JButton startbutton = new JButton("Start Simulation");
     public JButton obsbutton = new JButton("Enter Obs");
     public JButton swupdButton = new JButton("SW-Update");
+    public JButton RBackButton = new JButton("Roll-Back");
     public ImageIcon picimage = new ImageIcon(getClass().getResource("takingpicture.jpg"));
     public ImageIcon satimage = new ImageIcon(getClass().getResource("satnoobs.jpg"));
     public ImageIcon satobsimage = new ImageIcon(getClass().getResource("satwithobs.jpg"));
     public ImageIcon satRTimage = new ImageIcon(getClass().getResource("satelliteRT.jpg"));
-    public ImageIcon satLTimage = new ImageIcon(getClass().getResource("satelliteLT.jpg"));
+    public ImageIcon satLTimage = new ImageIcon(getClass().getResource("satLTnoobs.jpg"));
     public JLabel picimagelable = new JLabel(picimage);
     public JLabel satimagelable = new JLabel(satimage);
     public JLabel satobsimagelable = new JLabel(satobsimage);
@@ -103,6 +104,22 @@ public class GUI implements Serializable {
                 swupdButton.setEnabled(false);
             }
         });
+        
+          board2.add(RBackButton);
+          RBackButton.setEnabled(false);
+        RBackButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                bp.enqueueExternalEvent(StaticEvents.RollBack);
+                RBackButton.setEnabled(false);
+            }
+        });
+        
+        
+        
+        
+        
         telpanel.add(sattimelabel);
         telpanel.add(satposlabel);
         telpanel.add(satvellabel);
@@ -237,17 +254,22 @@ public class GUI implements Serializable {
     }
 
     void GuiUpdate() {
-        obslabel.setText("Collision detected! Maneuver in progress.");
+        obslabel.setText("");
         board.add(obstaclepanel);
         window.repaint();
     }
 
     void VelRec() {
-        obslabel.setText("The obstacle is out of sat orbit! Sat in n"
-                + "ominal velocity");
+        obslabel.setText("The obstacle is out of sat orbit! Sat in nominal velocity");
         window.remove(satLTimagelable);
         window.add(satimagelable, BorderLayout.SOUTH);
         window.repaint();
         obsbutton.setEnabled(true);
+    }
+
+    void GuiRollBack() {
+        board.remove(obstaclepanel);
+        swupdButton.setEnabled(true);
+        window.repaint();
     }
 }

@@ -2,11 +2,11 @@ bpjs.unRegisterBThread("Time and Position update Base");
 bpjs.unRegisterBThread("Take Pictures Base");
 
 bpjs.registerBThread("Time and Position update", function () {
-
+posBtN=this;
     // Local state variables
     var satVel = 1;
-    var satPos = posBt.satPos;
-    var simTime = posBt.simTime;
+    this.satPos = posBt.satPos;
+    this.simTime = posBt.simTime;
 
     // An infinite loop for state update
     while (true) {
@@ -16,8 +16,8 @@ bpjs.registerBThread("Time and Position update", function () {
         // Update the state based on the fired event
         if (e.equals(Tick)) {
             // Update position and time
-            satPos += satVel;
-            simTime++;
+            this.satPos += satVel;
+            this.simTime++;
 
             // Request to fire a position update event
             bsync({
@@ -87,5 +87,17 @@ bpjs.registerBThread("Obstacle avoidance", function () {
             var obsstarttime = e.ObsStartTime;
             var obsendtime = e.ObsEndTime;
         }
+    }
+});
+
+
+bpjs.registerBThread("RollBack Enable Disable", function () {
+    while (true) {
+        var e = bsync({waitFor: AnyPosUpdateEvent});
+        if ((e.SatVel) != 1) {
+            // Request to take a picture
+            bsync({request: RollBackDisable, block: RollBackEnable});
+        }else
+             bsync({request: RollBackEnable, block: RollBackDisable});
     }
 });

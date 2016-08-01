@@ -54,6 +54,9 @@ public class Demo1 extends BProgram {
         scope.put("ObsAvoided", scope, Context.javaToJS(StaticEvents.ObsAvoided, scope));
         scope.put("SoftwareUpdate", scope, Context.javaToJS(StaticEvents.SoftwareUpdate, scope));
         scope.put("VelRecovery", scope, Context.javaToJS(StaticEvents.VelRecovery, scope));
+        scope.put("RollBack", scope, Context.javaToJS(StaticEvents.RollBack, scope));
+        scope.put("RollBackDisable", scope, Context.javaToJS(StaticEvents.RollBackDisable, scope));
+        scope.put("RollBackEnable", scope, Context.javaToJS(StaticEvents.RollBackEnable, scope));
 
         scope.put("AnyObsAlertEvent", scope, Context.javaToJS(StaticEvents.AnyObsAlertEvent, scope));
         scope.put("AnyPosUpdateEvent", scope, Context.javaToJS(StaticEvents.AnyPosUpdateEvent, scope));
@@ -76,8 +79,13 @@ public class Demo1 extends BProgram {
 
                 if (e.equals(StaticEvents.SoftwareUpdate)) {
                     demo.loadJavascriptResource("bthreads/newLogic.js");
-                    
+
                     gui.GuiUpdate();
+                }
+
+                if (e.equals(StaticEvents.RollBack)) {
+                    demo.loadJavascriptResource("bthreads/baseLogic_rollback.js");
+                    gui.GuiRollBack();
                 }
 
                 if (e.equals(StaticEvents.TakePicture)) {
@@ -85,6 +93,13 @@ public class Demo1 extends BProgram {
                 }
                 if (StaticEvents.AnyObsAlertEvent.contains(e)) {
                     gui.obsdetected();
+                    gui.RBackButton.setEnabled(false);
+                }
+                if (StaticEvents.RollBackDisable.contains(e)) {
+                    gui.RBackButton.setEnabled(false);
+                }
+                if (StaticEvents.RollBackEnable.contains(e)) {
+                    gui.RBackButton.setEnabled(true);
                 }
                 if (StaticEvents.AnyPosUpdateEvent.contains(e)) {
                     gui.time = ((PosUpdate) e).SimTime;

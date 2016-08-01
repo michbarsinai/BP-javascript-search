@@ -19,20 +19,23 @@ import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 
 /**
- * A Javascript BThread (NOT a Java thread!). 
- * 
+ * A Javascript BThread (NOT a Java thread!).
+ *
  * @author orelmosheweinstock
  * @author Michael
  */
 public class BThread implements Serializable {
 
-    /** The Javascript function that will be called when {@code this} BThread runs. */
+    /**
+     * The Javascript function that will be called when {@code this} BThread
+     * runs.
+     */
     private Function entryPoint;
-    
+
     private String name;
     private Scriptable scope;
     private ContinuationPending continuation;
-    
+
     private RWBStatement currentRwbStatement;
     private boolean alive = true;
     private Context globalContext;
@@ -52,15 +55,16 @@ public class BThread implements Serializable {
     }
 
     public void bplog(String string) {
-        if (debugMode)
+        if (debugMode) {
             System.out.println(getName() + ": " + string);
+        }
     }
 
     public void setupScope(Scriptable programScope) {
         scope = (Scriptable) Context.javaToJS(this, programScope);
         scope.setPrototype(programScope);
-        scope.put("bt", scope, (Scriptable) Context.javaToJS(this, programScope) );
-        
+        scope.put("bt", scope, (Scriptable) Context.javaToJS(this, programScope));
+
         // This is a break from JS's semantics, but we have to do it.
         // In JS, inner functions know about variables in their syntactical parents.
         // For BThread functions we break this, and make them a top-level scope. This
@@ -70,7 +74,7 @@ public class BThread implements Serializable {
     }
 
     public Scriptable generateSubScope(Scriptable scope, InputStream ios,
-                                       String scriptName) {
+            String scriptName) {
         Scriptable tScope = (Scriptable) BProgram.evaluateInGlobalContext(
                 scope,
                 ios,
@@ -86,22 +90,23 @@ public class BThread implements Serializable {
             globalContext.callFunctionWithContinuations(entryPoint, scope, new Object[0]);
             bplog("Done - no bsyncs!");
             enterZombieMode(); // If we got here, there was no bSync in the JS code.
-            
+
         } catch (ContinuationPending pending) {
             continuation = pending;
-            if ( currentRwbStatement==null ) {
+            if (currentRwbStatement == null) {
                 System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
                 throw new IllegalStateException("BSync called but no statement registered");
             }
-            
+
         } finally {
             closeGlobalContext();
         }
     }
-    
+
     /**
-     * Resumes the Javascript program, returning the passed object
-     * as the return value of the {@code bSync} call that created the continuation.
+     * Resumes the Javascript program, returning the passed object as the return
+     * value of the {@code bSync} call that created the continuation.
+     *
      * @param event The selected event.
      * @return A pending continuation, or {@code null}.
      */
@@ -115,26 +120,26 @@ public class BThread implements Serializable {
             openGlobalContext();
             Object eventInJS = Context.javaToJS(event, scope);
             globalContext.resumeContinuation(toResume, scope, eventInJS);
-        
+
         } catch (ContinuationPending pending) {
-            if ( currentRwbStatement==null ) {
+            if (currentRwbStatement == null) {
                 System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
                 throw new IllegalStateException("BSync called but no statement registered");
             }
             continuation = pending;
             return continuation;
-        
+
         } finally {
             closeGlobalContext();
         }
-        
+
         bplog("Done");
         enterZombieMode();
         return null;
     }
 
-    public void bsync( RWBStatement aStatement ) {
-        
+    public void bsync(RWBStatement aStatement) {
+
         currentRwbStatement = aStatement;
         bplog("bsyncing with " + currentRwbStatement);
         openGlobalContext();
@@ -142,7 +147,7 @@ public class BThread implements Serializable {
         closeGlobalContext();
         throw capturedContinuation;
     }
-    
+
     /**
      * BSync call, used by the JS programs. Works as follows:
      * <ol>
@@ -151,79 +156,82 @@ public class BThread implements Serializable {
      * <li>Cleans up current Javascript context</li>
      * <li>Throws the continuation</li>
      * </ol>
-     * @param requestedEvents 
+     *
+     * @param requestedEvents
      * @param waitedEvents
      * @param blockedEvents
      */
     public void bsync(Set<? extends BEvent> requestedEvents,
-                      EventSet waitedEvents,
-                      EventSet blockedEvents) {
-        bsync( RWBStatement.make(this).request(requestedEvents)
-                                  .waitFor(waitedEvents)
-                                  .block(blockedEvents) );
+            EventSet waitedEvents,
+            EventSet blockedEvents) {
+        bsync(RWBStatement.make(this).request(requestedEvents)
+                .waitFor(waitedEvents)
+                .block(blockedEvents));
     }
-    
+
     public void bsync(BEvent aRequestedEvent,
-                      EventSet waitedEvents,
-                      EventSet blockedEvents) {
-        bsync( RWBStatement.make(this).request(aRequestedEvent)
-                                  .waitFor(waitedEvents)
-                                  .block(blockedEvents));
+            EventSet waitedEvents,
+            EventSet blockedEvents) {
+        bsync(RWBStatement.make(this).request(aRequestedEvent)
+                .waitFor(waitedEvents)
+                .block(blockedEvents));
     }
-    
-     public void bsync( NativeObject jsRWB ) {
-        Map<String, Object> jRWB = (Map)Context.jsToJava(jsRWB, Map.class);
-        
+
+    public void bsync(NativeObject jsRWB) {
+        Map<String, Object> jRWB = (Map) Context.jsToJava(jsRWB, Map.class);
+
         RWBStatement stmt = RWBStatement.make(this);
         Object req = jRWB.get("request");
-        if ( req != null ) {
-            if ( req instanceof BEvent ) {
-                stmt = stmt.request((BEvent)req);
-            } else if ( req instanceof NativeArray ) {
+        if (req != null) {
+            if (req instanceof BEvent) {
+                stmt = stmt.request((BEvent) req);
+            } else if (req instanceof NativeArray) {
                 NativeArray arr = (NativeArray) req;
                 stmt = stmt.request(
-                        Arrays.asList( arr.getIndexIds() ).stream()
-                              .map( i -> (BEvent)arr.get(i) )
-                              .collect( toSet() ));
+                        Arrays.asList(arr.getIndexIds()).stream()
+                        .map(i -> (BEvent) arr.get(i))
+                        .collect(toSet()));
             }
         }
-        
-        stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
-                   .block( convertToEventSet(jRWB.get("block")) )
-                   .breakUpon(convertToEventSet(jRWB.get("breakUpon")) );
+
+        stmt = stmt.waitFor(convertToEventSet(jRWB.get("waitFor")))
+                .block(convertToEventSet(jRWB.get("block")))
+                .breakUpon(convertToEventSet(jRWB.get("breakUpon")));
         stmt.setBthread(this);
-        
-        bsync( stmt );
-        
+
+        bsync(stmt);
+
     }
-    
-    private EventSet convertToEventSet( Object jsObject ) {
-        if ( jsObject == null ) return Events.emptySet;
-        
+
+    private EventSet convertToEventSet(Object jsObject) {
+        if (jsObject == null) {
+            return Events.emptySet;
+        }
+
         // This covers event sets AND events.
-        if ( jsObject instanceof EventSet ) {
-            return (EventSet)jsObject;
-        
-        } else if ( jsObject instanceof NativeArray ) {
+        if (jsObject instanceof EventSet) {
+            return (EventSet) jsObject;
+
+        } else if (jsObject instanceof NativeArray) {
             NativeArray arr = (NativeArray) jsObject;
-            if ( Stream.of(arr.getIds()).anyMatch( id -> arr.get(id)==null) ) {
+            if (Stream.of(arr.getIds()).anyMatch(id -> arr.get(id) == null)) {
                 throw new RuntimeException("EventSet Array contains null sets.");
             }
             return ComposableEventSet.anyOf(
-              Arrays.asList(arr.getIndexIds()).stream()
-                    .map( i ->(EventSet)arr.get(i) )
-                    .collect( toSet() ) );
+                    Arrays.asList(arr.getIndexIds()).stream()
+                    .map(i -> (EventSet) arr.get(i))
+                    .collect(toSet()));
         } else {
             final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
             Logger.getLogger(BThread.class.getName()).log(Level.SEVERE, errorMessage);
-            throw new IllegalArgumentException( errorMessage);
+            throw new IllegalArgumentException(errorMessage);
         }
     }
-    
+
     private void closeGlobalContext() {
         Context.exit();
     }
-    
+
     public void enterZombieMode() {
         bplog("Entering Zombie mode");
         currentRwbStatement = null;
@@ -234,7 +242,11 @@ public class BThread implements Serializable {
     public RWBStatement getCurrentRwbStatement() {
         return currentRwbStatement;
     }
-    
+
+    public void setCurrentRwbStatement(RWBStatement stmt) {
+        currentRwbStatement = stmt;
+    }
+
     public boolean isAlive() {
         return alive;
     }
@@ -247,7 +259,6 @@ public class BThread implements Serializable {
         continuation = cont;
     }
 
-    
     public String getName() {
         return name;
     }
@@ -261,5 +272,8 @@ public class BThread implements Serializable {
         return "[BThread: " + name + "]";
     }
 
-}
+    public void setAlive(boolean b) {
+        this.alive = b;
+    }
 
+}

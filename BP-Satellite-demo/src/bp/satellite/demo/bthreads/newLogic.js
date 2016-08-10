@@ -22,7 +22,7 @@ posBtN=this;
             // Request to fire a position update event
             bsync({
                 request: new PosUpdate(simTime, satPos, satVel),
-                block: [LThrust, RThrust, TakePicture, AnyObsAlertEvent, ObsAvoided, StartSimulation]});
+                block: [LThrust, RThrust, TakePicture, AnyObsAlertEvent, ObsAvoided, StartSimulation,RollBackDisable,RollBackEnable]});
 
         } else if (e.equals(LThrust)) {
             // Update Satelite velocity
@@ -37,7 +37,7 @@ posBtN=this;
 bpjs.registerBThread("Take Pictures", function () {
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});
-        if ((e.SatPos % 100) < (e.SatVel)) {
+        if ((e.SatPos % 100) < (e.SatVel-0.05)) {
             // Request to take a picture
             bsync({request: TakePicture, block: AnyPosUpdateEvent});
         }
@@ -58,28 +58,18 @@ bpjs.registerBThread("Obstacle avoidance", function () {
 
                 // Slow the satelite down
                 bsync({request: RThrust});
-
-            } 
-            if ((e.SatVel >= ((obspos - e.SatPos) / (obsendtime - e.SimTime))) &&
-                    (e.SatVel <= ((obspos - e.SatPos) / (obsstarttime - e.SimTime))) &&
-                    (obsstarttime>=e.SimTime) && (obspos>=e.SatPos)) {
-
-                // Slow the satelite down
-                bsync({request: RThrust});
                 flagvel=true;
-
-           }
+           }else {
+                // Mark that the risk is removed
+                bsync({request: ObsAvoided});
+                flagobs = false;
+            }
            if(e.SimTime>=obsendtime && e.SatVel<1 && flagvel) {
                bsync({request: LThrust}); 
            }else if(flagvel==true && e.SatVel==1 && flagobs == false ) {
                flagvel=false;
                bsync({request:VelRecovery });
-           }else{
-
-                // Mark that the risk is removed
-                bsync({request: ObsAvoided});
-                flagobs = false;
-            }
+           }
         } else if (AnyObsAlertEvent.contains(e) && !flagobs) {
             flagobs = true;
             flagvel=true;

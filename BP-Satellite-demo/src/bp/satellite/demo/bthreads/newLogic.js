@@ -25,10 +25,10 @@ posBtN=this;
                 block: [LThrust, RThrust, TakePicture, AnyObsAlertEvent, ObsAvoided, StartSimulation,RollBackDisable,RollBackEnable]});
 
         } else if (e.equals(LThrust)) {
-            // Update Satelite velocity
+            // Update Satellite velocity
             satVel += 0.1;
         } else if (e.equals(RThrust)) {
-            // Update Satelite velocity
+            // Update Satellite velocity
             satVel -= 0.1;
         }
     }
@@ -85,7 +85,6 @@ bpjs.registerBThread("RollBack Enable Disable", function () {
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});
         if ((e.SatVel) != 1) {
-            // Request to take a picture
             bsync({request: RollBackDisable, block: RollBackEnable});
         }else
              bsync({request: RollBackEnable, block: RollBackDisable});

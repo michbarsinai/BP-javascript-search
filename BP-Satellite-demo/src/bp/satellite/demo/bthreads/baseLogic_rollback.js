@@ -22,7 +22,7 @@ bpjs.registerBThread("Time and Position update Base", function () {
 bpjs.registerBThread("Take Pictures Base", function () {
     while (true) {
         var e = bsync({waitFor: AnyPosUpdateEvent});
-        if ((e.SatPos % 100) < (e.SatVel)) {
+        if ((e.SatPos % 100) < (e.SatVel-0.05)) {
             bsync({request: TakePicture});
         }
     }

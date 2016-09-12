@@ -32,11 +32,12 @@ public class GUI implements Serializable {
     public JButton startbutton = new JButton("Start Simulation");
     public JButton obsbutton = new JButton("Enter Obs");
     public JButton swupdButton = new JButton("SW-Update");
+    public JButton RBackButton = new JButton("Roll-Back");
     public ImageIcon picimage = new ImageIcon(getClass().getResource("takingpicture.jpg"));
     public ImageIcon satimage = new ImageIcon(getClass().getResource("satnoobs.jpg"));
     public ImageIcon satobsimage = new ImageIcon(getClass().getResource("satwithobs.jpg"));
     public ImageIcon satRTimage = new ImageIcon(getClass().getResource("satelliteRT.jpg"));
-    public ImageIcon satLTimage = new ImageIcon(getClass().getResource("satelliteLT.jpg"));
+    public ImageIcon satLTimage = new ImageIcon(getClass().getResource("satLTnoobs.jpg"));
     public JLabel picimagelable = new JLabel(picimage);
     public JLabel satimagelable = new JLabel(satimage);
     public JLabel satobsimagelable = new JLabel(satobsimage);
@@ -52,6 +53,7 @@ public class GUI implements Serializable {
     public JTextField strattimetext = new JTextField("250", 5);
     public JTextField endtimetext = new JTextField("500", 5);
     public JTextField postext = new JTextField("300", 5);
+    public JPanel obstaclepanel = new JPanel();
     int obsposnum, obsstarttimenum, obsendtimenum, imagecount = 1;
     boolean buttonflag = true;
     public double pos = 0;
@@ -75,7 +77,6 @@ public class GUI implements Serializable {
         // The board
         JPanel board2 = new JPanel();
         board = new JPanel();
-        JPanel obstaclepanel = new JPanel();
         JPanel timeobstaclepanel = new JPanel();
         JPanel posobstaclepanel = new JPanel();
         JPanel telpanel = new JPanel();
@@ -89,10 +90,8 @@ public class GUI implements Serializable {
 
             @Override
             public void actionPerformed(ActionEvent a) {
-                if (buttonflag) {
-                    bp.enqueueExternalEvent(StaticEvents.StartSimulation);
-                }
-                buttonflag = false;
+                bp.enqueueExternalEvent(StaticEvents.StartSimulation);
+                startbutton.setEnabled(false);
             }
         });
 
@@ -102,9 +101,25 @@ public class GUI implements Serializable {
             @Override
             public void actionPerformed(ActionEvent a) {
                 bp.enqueueExternalEvent(StaticEvents.SoftwareUpdate);
-                swupdButton.disable();
+                swupdButton.setEnabled(false);
             }
         });
+        
+          board2.add(RBackButton);
+          RBackButton.setEnabled(false);
+        RBackButton.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent a) {
+                bp.enqueueExternalEvent(StaticEvents.RollBack);
+                RBackButton.setEnabled(false);
+            }
+        });
+        
+        
+        
+        
+        
         telpanel.add(sattimelabel);
         telpanel.add(satposlabel);
         telpanel.add(satvellabel);
@@ -172,7 +187,6 @@ public class GUI implements Serializable {
         telpanel.setBorder(telborder);
 
         board.add(telpanel);
-        board.add(obstaclepanel);
         board.setLayout(new GridLayout(3, 1));
 
         // Add the boards and the message component to the window
@@ -218,6 +232,7 @@ public class GUI implements Serializable {
         obslabel.setText("Obstacle detected!");
         window.remove(satimagelable);
         window.add(satobsimagelable, BorderLayout.SOUTH);
+        obsbutton.setEnabled(false);
         board.repaint();
         window.repaint();
     }
@@ -227,6 +242,34 @@ public class GUI implements Serializable {
         window.remove(satobsimagelable);
         window.remove(satimagelable);
         window.add(satRTimagelable, BorderLayout.SOUTH);
+        window.repaint();
+    }
+
+    void LTfire() {
+        obslabel.setText("Velocity Recovery in progress..");
+        window.remove(satobsimagelable);
+        window.remove(satimagelable);
+        window.add(satLTimagelable, BorderLayout.SOUTH);
+        window.repaint();
+    }
+
+    void GuiUpdate() {
+        obslabel.setText("");
+        board.add(obstaclepanel);
+        window.repaint();
+    }
+
+    void VelRec() {
+        obslabel.setText("The obstacle is out of sat orbit! Sat in nominal velocity");
+        window.remove(satLTimagelable);
+        window.add(satimagelable, BorderLayout.SOUTH);
+        window.repaint();
+        obsbutton.setEnabled(true);
+    }
+
+    void GuiRollBack() {
+        board.remove(obstaclepanel);
+        swupdButton.setEnabled(true);
         window.repaint();
     }
 }

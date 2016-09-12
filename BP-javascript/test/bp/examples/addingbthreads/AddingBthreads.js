@@ -6,9 +6,9 @@
 bpjs.log.info("Program Loaded");
 
 // Define the events.
-var kidADone  = bpjs.Event("kidADone");
-var kidBDone  = bpjs.Event("kidBDone");
-var parentDone= bpjs.Event("parentDone");
+var kidADone = bpjs.Event("kidADone");
+var kidBDone = bpjs.Event("kidBDone");
+var parentDone = bpjs.Event("parentDone");
 
 bpjs.registerBThread("parentBThread", function () {
     
@@ -23,18 +23,18 @@ bpjs.registerBThread("parentBThread", function () {
         bpjs.log.info("kid b1 started");
         bsync(kidBDone, emptySet, parentDone);
     });
-    bsync( parentDone, emptySet, emptySet );
-    
-    
+    bsync(parentDone, emptySet, emptySet);
+
+
     // second one, test for behavior on the resume() method.
-    bpjs.registerBThread("kidA2", function() {
+    bpjs.registerBThread("kidA2", function () {
         bsync(kidADone, emptySet, parentDone);
     });
-    bpjs.registerBThread("kidB2", function() {
+    bpjs.registerBThread("kidB2", function () {
         bsync(kidBDone, emptySet, parentDone);
     });
-    bsync( parentDone, emptySet, emptySet );
-    
+    bsync(parentDone, emptySet, emptySet);
+
 });
 
 

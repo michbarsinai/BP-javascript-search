@@ -92,7 +92,16 @@ public class BProgramJsProxy {
      */
     public void registerBThread(Function func) {
         registerBThread("autoadded-" + autoAddCounter.incrementAndGet(), func);
-        
+    }
+    
+    /**
+     * Push a new event to the external event queue. 
+     * @param evt The event to be pushed.
+     * @return the event being pushed.
+     */
+    public BEvent enqueueExternalEvent( BEvent evt )  {
+        program.enqueueExternalEvent(evt);
+        return evt;
     }
     
     /**

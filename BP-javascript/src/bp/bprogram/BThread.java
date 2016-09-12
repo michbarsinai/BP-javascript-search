@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 
 import static bp.BProgramControls.debugMode;
+import bp.bprogram.jsproxy.BThreadJsProxy;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.Events;
@@ -36,6 +37,7 @@ public class BThread implements Serializable {
     private RWBStatement currentRwbStatement;
     private boolean alive = true;
     private Context globalContext;
+    private final BThreadJsProxy proxy = new BThreadJsProxy(this);
 
     public BThread(String aName, Function anEntryPoint) {
         name = aName;
@@ -51,15 +53,9 @@ public class BThread implements Serializable {
         globalContext.setOptimizationLevel(-1); // must use interpreter mode
     }
 
-    public void bplog(String string) {
-        if (debugMode)
-            System.out.println(getName() + ": " + string);
-    }
-
     public void setupScope(Scriptable programScope) {
-        scope = (Scriptable) Context.javaToJS(this, programScope);
+        scope = (Scriptable) Context.javaToJS(proxy, programScope);
         scope.setPrototype(programScope);
-        scope.put("bt", scope, (Scriptable) Context.javaToJS(this, programScope) );
         
         // This is a break from JS's semantics, but we have to do it.
         // In JS, inner functions know about variables in their syntactical parents.
@@ -84,7 +80,6 @@ public class BThread implements Serializable {
             openGlobalContext();
             continuation = null;
             globalContext.callFunctionWithContinuations(entryPoint, scope, new Object[0]);
-            bplog("Done - no bsyncs!");
             enterZombieMode(); // If we got here, there was no bSync in the JS code.
             
         } catch (ContinuationPending pending) {
@@ -107,7 +102,6 @@ public class BThread implements Serializable {
      */
     // TODO return Optional
     public ContinuationPending resume(BEvent event) {
-        bplog("resuming");
         try {
             Object toResume = continuation.getContinuation();
             continuation = null;
@@ -128,96 +122,16 @@ public class BThread implements Serializable {
             closeGlobalContext();
         }
         
-        bplog("Done");
         enterZombieMode();
         return null;
     }
 
     public void bsync( RWBStatement aStatement ) {
-        
-        currentRwbStatement = aStatement;
-        bplog("bsyncing with " + currentRwbStatement);
+        currentRwbStatement = aStatement.setBthread(this);
         openGlobalContext();
         ContinuationPending capturedContinuation = globalContext.captureContinuation();
         closeGlobalContext();
         throw capturedContinuation;
-    }
-    
-    /**
-     * BSync call, used by the JS programs. Works as follows:
-     * <ol>
-     * <li>Creates an {@link RWBStatement} using the parameters</li>
-     * <li>Captures a continuation</li>
-     * <li>Cleans up current Javascript context</li>
-     * <li>Throws the continuation</li>
-     * </ol>
-     * @param requestedEvents 
-     * @param waitedEvents
-     * @param blockedEvents
-     */
-    public void bsync(Set<? extends BEvent> requestedEvents,
-                      EventSet waitedEvents,
-                      EventSet blockedEvents) {
-        bsync( RWBStatement.make(this).request(requestedEvents)
-                                  .waitFor(waitedEvents)
-                                  .block(blockedEvents) );
-    }
-    
-    public void bsync(BEvent aRequestedEvent,
-                      EventSet waitedEvents,
-                      EventSet blockedEvents) {
-        bsync( RWBStatement.make(this).request(aRequestedEvent)
-                                  .waitFor(waitedEvents)
-                                  .block(blockedEvents));
-    }
-    
-     public void bsync( NativeObject jsRWB ) {
-        Map<String, Object> jRWB = (Map)Context.jsToJava(jsRWB, Map.class);
-        
-        RWBStatement stmt = RWBStatement.make(this);
-        Object req = jRWB.get("request");
-        if ( req != null ) {
-            if ( req instanceof BEvent ) {
-                stmt = stmt.request((BEvent)req);
-            } else if ( req instanceof NativeArray ) {
-                NativeArray arr = (NativeArray) req;
-                stmt = stmt.request(
-                        Arrays.asList( arr.getIndexIds() ).stream()
-                              .map( i -> (BEvent)arr.get(i) )
-                              .collect( toSet() ));
-            }
-        }
-        
-        stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
-                   .block( convertToEventSet(jRWB.get("block")) )
-                   .breakUpon(convertToEventSet(jRWB.get("breakUpon")) );
-        stmt.setBthread(this);
-        
-        bsync( stmt );
-        
-    }
-    
-    private EventSet convertToEventSet( Object jsObject ) {
-        if ( jsObject == null ) return Events.emptySet;
-        
-        // This covers event sets AND events.
-        if ( jsObject instanceof EventSet ) {
-            return (EventSet)jsObject;
-        
-        } else if ( jsObject instanceof NativeArray ) {
-            NativeArray arr = (NativeArray) jsObject;
-            if ( Stream.of(arr.getIds()).anyMatch( id -> arr.get(id)==null) ) {
-                throw new RuntimeException("EventSet Array contains null sets.");
-            }
-            return ComposableEventSet.anyOf(
-              Arrays.asList(arr.getIndexIds()).stream()
-                    .map( i ->(EventSet)arr.get(i) )
-                    .collect( toSet() ) );
-        } else {
-            final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
-            Logger.getLogger(BThread.class.getName()).log(Level.SEVERE, errorMessage);
-            throw new IllegalArgumentException( errorMessage);
-        }
     }
     
     private void closeGlobalContext() {
@@ -225,7 +139,6 @@ public class BThread implements Serializable {
     }
     
     public void enterZombieMode() {
-        bplog("Entering Zombie mode");
         currentRwbStatement = null;
         continuation = null;
         alive = false;

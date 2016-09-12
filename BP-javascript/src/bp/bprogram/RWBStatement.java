@@ -46,11 +46,17 @@ public class RWBStatement {
      * <code>
      * RWBStatement myStatement = make().request( XX ).waitFor( YY ).block( ZZZ );
      * </code>
+     * @param creator the {@link BThread} that created this statument.
      * @return an empty statement
      */
     public static RWBStatement make(BThread creator) {
         return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet).setBthread(creator);
     }
+    public static RWBStatement make() {
+        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet);
+    }
+    
+    
     
     public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block, EventSet except) {
         this.request = new HashSet<>(request);

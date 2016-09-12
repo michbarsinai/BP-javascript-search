@@ -8,7 +8,7 @@ var breakingEvent = bpjs.Event("breaking");
 var forbiddenEvent = bpjs.Event("forbidden");
 
 bpjs.registerBThread("requestor", function () {
-  // request hotEvent three times, in different verbosities.
+  // request hotEvent twice.
     bsync( {request:breakingEvent} );
     bsync( {request:breakingEvent} );
 });

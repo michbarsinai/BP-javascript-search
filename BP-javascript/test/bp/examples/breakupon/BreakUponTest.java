@@ -1,4 +1,4 @@
- package bp.examples.breakupon;
+package bp.examples.breakupon;
 
 import bp.events.BEvent;
 import bp.bprogram.BProgram;

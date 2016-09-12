@@ -7,10 +7,10 @@ paper.
 Functions in this file process XML nodes and call lower-level functions that
 create the CABs, which create the actual BP/Javascript code.
 :)
+(: TODO need to use lifeline names, not locations. Enabled events should have chart ids. :)
 
 
 (: Generate the JS for the passed message XML node. :)
-(: TODO need to use lifeline names, not locations. Enabled events should have chart ids. :)
 declare function local:message( $msg as node() ) as xs:string {
   let $fromLoc := lsc:loc($msg/@from, $msg/@fromloc)
   let $toLoc := lsc:loc($msg/@to, $msg/@toloc)
@@ -76,7 +76,7 @@ declare function local:dispatch( $nd as element() ) as xs:string {
     case element(lifeline) return local:lifeline($nd)
     case element(message)  return local:message($nd)
     case element(sync)     return local:sync($nd)
-    (: sync, loop, subchart ....:)
+    (: alternatives, assignemnt....:)
     case element(loop)     return local:loop($nd)
     case element(lsc)      return local:lsc($nd)
     default return concat( "ERROR: NO DISPATCH DESTINATION FOUND for ", $nd)

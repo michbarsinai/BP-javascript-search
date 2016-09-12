@@ -1,12 +1,12 @@
 package bp.bprogram;
 
+import bp.bprogram.jsproxy.BProgramJsProxy;
 import bp.events.BEvent;
 import bp.tasks.*;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-import static bp.BProgramControls.debugMode;
 import bp.bprogram.listeners.BProgramListener;
 import bp.eventselection.EventSelectionResult;
 import bp.eventselection.EventSelectionResult.EmptyResult;
@@ -16,7 +16,6 @@ import bp.eventselection.SimpleEventSelectionStrategy;
 import bp.eventsets.Events;
 import static bp.eventsets.Events.all;
 import static bp.eventsets.Events.emptySet;
-import bp.eventsets.JsEventSet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,18 +25,15 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import static java.nio.file.Files.readAllBytes;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.stream.Collectors.toList;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Function;
 import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s
@@ -49,7 +45,7 @@ import org.mozilla.javascript.ScriptableObject;
 public abstract class BProgram {
 
     /**
-     * "Poison pill" o insert to the external event queue. Used only to turn the
+     * "Poison pill" to insert to the external event queue. Used only to turn the
      * daemon mode off.
      */
     private static final BEvent NO_MORE_DAEMON = new BEvent("NO_MORE_DAEMON");
@@ -125,9 +121,8 @@ public abstract class BProgram {
 
     private final List<BProgramListener> listeners = new ArrayList<>();
 
-    private final AtomicInteger autoAddCounter = new AtomicInteger(0);
-
     private volatile boolean started = false;
+
     protected Scriptable globalScope;
 
     public BProgram() {
@@ -196,33 +191,6 @@ public abstract class BProgram {
 
     }
 
-    /**
-     * Event constructor, called from Javascript, hence the funny
-     * capitalization.
-     *
-     * @param name name of the event
-     * @return an event with the passed name.
-     */
-    public BEvent Event(String name) {
-        return new BEvent(name);
-    }
-
-    /**
-     * Event constructor, called from Javascript, hence the funny
-     * capitalization.
-     *
-     * @param name name of the event
-     * @param jsData Additional data for the object.
-     * @return an event with the passed name.
-     */
-    public BEvent Event(String name, Object jsData) {
-        return new BEvent(name, jsData);
-    }
-    
-    public JsEventSet EventSet(String name, Function predicate) {
-        return new JsEventSet(name, predicate);
-    }
-
     public Object evaluateInGlobalScope(InputStream ios, String scriptname) {
         return evaluateInGlobalContext(globalScope, ios, scriptname);
     }
@@ -245,7 +213,7 @@ public abstract class BProgram {
      * 
      * @see #loadJavascriptResource(java.lang.String, boolean) 
      */
-    protected void loadJavascriptResource( String path ) {
+    public void loadJavascriptResource( String path ) {
         loadJavascriptResource(path, false);
     }
     
@@ -255,7 +223,7 @@ public abstract class BProgram {
      * @param path path of the resource, relative to the class.
      * @param absolute is the path global, or relative to the current class.
      */
-    protected void loadJavascriptResource(String path, boolean absolute) {
+    public void loadJavascriptResource(String path, boolean absolute) {
         try {
             final URL resource = (absolute?getClass().getClassLoader().getResource(path):getClass().getResource(path));
             if ( resource == null ) {
@@ -282,36 +250,6 @@ public abstract class BProgram {
         } finally {
             Context.exit();
         }
-    }
-
-    /**
-     * Called from JS to add BThreads running func as their runnable code.
-     *
-     * @param name
-     * @param func
-     * @return the added BThread
-     *
-     * @see #registerBThread(org.mozilla.javascript.Function)
-     */
-    public BThread registerBThread(String name, Function func) {
-        BThread bt = new BThread(name, func);
-        registerBThread(bt);
-        return bt;
-    }
-
-    /**
-     * Registers a BThread and gives it a unique name. Use when you don't care
-     * about the added BThread's name.
-     *
-     * @param func the BThread to add.
-     * @return Added BThread.
-     *
-     * @see #registerBThread(java.lang.String, org.mozilla.javascript.Function)
-     */
-    public BThread registerBThread(Function func) {
-        BThread bt = new BThread("autoadded-" + autoAddCounter.incrementAndGet(), func);
-        registerBThread(bt);
-        return bt;
     }
 
     /**
@@ -381,6 +319,7 @@ public abstract class BProgram {
         // Handle breakUpons
         if (!toRemove.isEmpty()) {
             bthreads.removeAll(toRemove);
+            // FIXME allow these BTHreads last-chance event pumping.
             toRemove.forEach(e -> listeners.forEach(l -> l.bthreadRemoved(this, e)));
         }
 
@@ -403,6 +342,18 @@ public abstract class BProgram {
     }
 
     /**
+     * Creates a list of the current {@link RWBStatements} of the current
+     * BThreads. Note that the order in the list is arbitrary.
+     *
+     * @return list of statements in arbitrary order.
+     */
+    public List<RWBStatement> currentStatements() {
+        return bthreads.stream()
+                .map(BThread::getCurrentRwbStatement)
+                .collect(toList());
+    }
+
+    /**
      * a method that sends events as input for the application
      *
      * @param e
@@ -416,6 +367,7 @@ public abstract class BProgram {
      * names are used as their Javascript name.
      *
      * @param events The events to register.
+     * // TODO do we need this, now that we're pure-js?
      */
     protected void registerEvents(BEvent... events) {
         Arrays.asList(events).forEach((BEvent e) -> globalScope.put(e.getName(), globalScope, Context.javaToJS(e, globalScope)));
@@ -470,18 +422,6 @@ public abstract class BProgram {
         return new BSyncState(currentStatements(), Collections.unmodifiableList(enqueuedExternalEvents));
     }
 
-    /**
-     * Creates a list of the current {@link RWBStatements} of the current
-     * BThreads. Note that the order in the list is arbitrary.
-     *
-     * @return list of statements in arbitrary order.
-     */
-    public List<RWBStatement> currentStatements() {
-        return bthreads.stream()
-                .map(BThread::getCurrentRwbStatement)
-                .collect(toList());
-    }
-
     private void startRecentlyRegisteredBThreads() throws InterruptedException {
 
         add(recentlyRegisteredBthreads);
@@ -528,10 +468,14 @@ public abstract class BProgram {
                 = BProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
             globalScope = cx.initStandardObjects(importer);
-
-            // TODO these should be defined in a Javascript preamble, once we can define event sets in JS.
+            
+            BProgramJsProxy proxy = new BProgramJsProxy(this);
             globalScope.put("bpjs", globalScope,
-                    Context.javaToJS(this, globalScope));
+                    Context.javaToJS(proxy, globalScope)); // for legacy code.
+            globalScope.put("bp", globalScope,
+                    Context.javaToJS(proxy, globalScope)); // recommended use
+            
+            // TODO these should be defined in a Javascript preamble, once we can define event sets in JS.
             globalScope.put("emptySet", globalScope,
                     Context.javaToJS(emptySet, globalScope));
             globalScope.put("all", globalScope,
@@ -572,9 +516,7 @@ public abstract class BProgram {
     }
 
     public void bplog(String string) {
-        if (debugMode) {
-            System.out.println("[" + this + "]: " + string);
-        }
+        System.out.println("[" + this + "]: " + string);
     }
 
     public Set<BThread> getBThreads() {

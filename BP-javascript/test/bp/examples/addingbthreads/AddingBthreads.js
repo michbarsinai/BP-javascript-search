@@ -3,7 +3,7 @@
  * This little app adds bthreads dynamically.
  */
 
-bpjs.bplog("Program Loaded");
+bpjs.log.info("Program Loaded");
 
 // Define the events.
 var kidADone  = bpjs.Event("kidADone");
@@ -12,15 +12,15 @@ var parentDone= bpjs.Event("parentDone");
 
 bpjs.registerBThread("parentBThread", function () {
     
-    bpjs.bplog("parent started");
+    bpjs.log.info("parent started");
     
     // first one, text for behavior on the start() method.
     bpjs.registerBThread("kidA1", function() {
-        bpjs.bplog("kid a1 started");
+        bpjs.log.info("kid a1 started");
         bsync(kidADone, emptySet, parentDone);
     });
     bpjs.registerBThread("kidB1", function() {
-        bpjs.bplog("kid b1 started");
+        bpjs.log.info("kid b1 started");
         bsync(kidBDone, emptySet, parentDone);
     });
     bsync( parentDone, emptySet, emptySet );

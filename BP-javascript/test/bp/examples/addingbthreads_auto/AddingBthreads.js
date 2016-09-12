@@ -1,36 +1,36 @@
-/* global bpjs, noEvents, emptySet */
+/* global bp, noEvents, emptySet */
 /* 
  * This little app adds bthreads dynamically.
  */
 
-bpjs.bplog("Program Loaded");
+bp.log.info("Program Loaded");
 
 // Define the events.
-var kidADone  = bpjs.Event("kidADone");
-var kidBDone  = bpjs.Event("kidBDone");
-var parentDone= bpjs.Event("parentDone");
+var kidADone  = bp.Event("kidADone");
+var kidBDone  = bp.Event("kidBDone");
+var parentDone= bp.Event("parentDone");
 
-bpjs.registerBThread("parentBThread", function () {
+bp.registerBThread("parentBThread", function () {
     
-    bpjs.bplog("parent started");
+    bp.log.info("parent started");
     
     // first one, text for behavior on the start() method.
-    bpjs.registerBThread( function() {
-        bpjs.bplog("kid a1 started");
+    bp.registerBThread( function() {
+        bp.log.info("kid a1 started");
         bsync(kidADone, emptySet, parentDone);
     });
-    bpjs.registerBThread( function() {
-        bpjs.bplog("kid b1 started");
+    bp.registerBThread( function() {
+        bp.log.info("kid b1 started");
         bsync(kidBDone, emptySet, parentDone);
     });
     bsync( parentDone, emptySet, emptySet );
     
     
     // second one, test for behavior on the resume() method.
-    bpjs.registerBThread( function() {
+    bp.registerBThread( function() {
         bsync(kidADone, emptySet, parentDone);
     });
-    bpjs.registerBThread( function() {
+    bp.registerBThread( function() {
         bsync(kidBDone, emptySet, parentDone);
     });
     bsync( parentDone, emptySet, emptySet );

@@ -8,6 +8,21 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
+### 2016-09-13
+#### Client code / Javascript
+* :sparkles: Updated the logging mechanism from global, single level to 3-level. Code change required: `bplog("hello") -> bp.log.info("hello)`. Also supports `warn` and `fine`.
+* :put_litter_in_its_place: `bpjs` is deprecated (but still works). Please use `bp` now.
+* :put_litter_in_its_place: positional bsync deprecated (but still works). Please use the named-argument variant `bsync({request:....})`.
+* :put_litter_in_its_place: BThread is not exposed in Javascript via `bt` (that was never used).
+* :sparkles: BThreads can now enqueue external events using `bp.enqueueExternalEvent()`.
+* :sparkles: BThreads can now specify a function that will be executed if they are removed because an event in their `breakUpon` event set was selected. Use `setBreakUponHandler( function(event){...} )`.
+
+#### Engine/General
+* :sparkles: Restructured the engine with JS proxies - javascript code has no direct interaction with the Java engine parts!
+* :thumbsup: More unit tests and examples
+
+
+
 ### 2016-06-11
 * :sparkles: BEvents now have an associated `data` object. See example [here](BP-javascript/test/bp/examples/eventswithdata/EventsWithData.js)
 
@@ -47,3 +62,4 @@ This library was originally created my @moshewe, but was refactored extensively 
 Legend:
 * :arrows_counterclockwise: Change
 * :sparkles:New feature
+* :put_litter_in_its_place: Deprecation

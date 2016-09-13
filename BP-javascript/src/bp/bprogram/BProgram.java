@@ -1,5 +1,6 @@
 package bp.bprogram;
 
+import bp.bprogram.exceptions.BProgramException;
 import bp.bprogram.jsproxy.BProgramJsProxy;
 import bp.events.BEvent;
 import bp.tasks.*;
@@ -34,6 +35,8 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.WrappedException;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s
@@ -153,22 +156,26 @@ public abstract class BProgram {
     }
 
     public void start() throws InterruptedException {
-        setup();
-        listeners.forEach(l -> l.started(this));
-        started = true;
+        try {
+            setup();
+            listeners.forEach(l -> l.started(this));
+            started = true;
 
-        executor.invokeAll(bthreads.stream()
-                .map(bt -> new StartBThread(bt))
-                .collect(toList()));
-        startRecentlyRegisteredBThreads();
-        bthreadCleanup();
-        if (bthreads.isEmpty()) {
-            // super corner case, where no bsyncs were called.
-            listeners.forEach(l -> l.ended(this));
-        } else {
-            do {
-                mainEventLoop();
-            } while (isDaemonMode() && waitForExternalEvent());
+            executor.invokeAll(bthreads.stream()
+                    .map(bt -> new StartBThread(bt))
+                    .collect(toList()));
+            startRecentlyRegisteredBThreads();
+            bthreadCleanup();
+            if (bthreads.isEmpty()) {
+                // super corner case, where no bsyncs were called.
+                listeners.forEach(l -> l.ended(this));
+            } else {
+                do {
+                    mainEventLoop();
+                } while (isDaemonMode() && waitForExternalEvent());
+            }
+        } catch ( WrappedException we ) {
+            throw new BProgramException(we.getCause());
         }
     }
 
@@ -300,14 +307,14 @@ public abstract class BProgram {
      * Awakens BThreads that waited for/requested this event in their last
      * bsync, and waits for them to terminate.
      *
-     * @param anEvent The event to trigger. Cannot be {@code null}.
+     * @param selectedEvent The event to trigger. Cannot be {@code null}.
      * @throws java.lang.InterruptedException
      */
-    public void triggerEvent(BEvent anEvent) throws InterruptedException {
-        if (anEvent == null) {
+    public void triggerEvent(BEvent selectedEvent) throws InterruptedException {
+        if (selectedEvent == null) {
             throw new IllegalArgumentException("Cannot trigger a null event.");
         }
-        listeners.forEach(l -> l.eventSelected(this, anEvent));
+        listeners.forEach(l -> l.eventSelected(this, selectedEvent));
 
         bthreads.forEach(bt -> {
             if (bt.getCurrentRwbStatement() == null) {
@@ -315,21 +322,25 @@ public abstract class BProgram {
             }
         });
 
-        Set<BThread> toRemove = bthreads.stream()
-                .filter(bt -> bt.getCurrentRwbStatement().getBreakUpon().contains(anEvent))
+        Set<BThread> brokenUpon = bthreads.stream()
+                .filter(bt -> bt.getCurrentRwbStatement().getBreakUpon().contains(selectedEvent))
                 .collect(toSet());
 
         // Handle breakUpons
-        if (!toRemove.isEmpty()) {
-            bthreads.removeAll(toRemove);
+        if (!brokenUpon.isEmpty()) {
+            bthreads.removeAll(brokenUpon);
             // FIXME allow these BTHreads last-chance event pumping.
-            toRemove.forEach(e -> listeners.forEach(l -> l.bthreadRemoved(this, e)));
+            brokenUpon.forEach(e -> {
+                e.setAlive(false);
+                listeners.forEach(l -> l.bthreadRemoved(this, e));
+                e.getBreakUponHandler().ifPresent( func -> executeInGlobalScope(func, new Object[]{selectedEvent}));
+            });
         }
 
         // See who resumes for the next thread.
         Collection<ResumeBThread> resumes = bthreads.stream()
-                .filter(bt -> bt.getCurrentRwbStatement().shouldWakeFor(anEvent))
-                .map(bt -> new ResumeBThread(bt, anEvent))
+                .filter(bt -> bt.getCurrentRwbStatement().shouldWakeFor(selectedEvent))
+                .map(bt -> new ResumeBThread(bt, selectedEvent))
                 .collect(toList());
         executor.invokeAll(resumes);
         startRecentlyRegisteredBThreads();
@@ -499,6 +510,13 @@ public abstract class BProgram {
         }
     }
 
+    protected void executeInGlobalScope( Function aFunction, Object[] args  ) {
+        Context globalContext = ContextFactory.getGlobal().enterContext();
+        globalContext.setOptimizationLevel(-1); // must use interpreter mode
+        globalContext.callFunctionWithContinuations(aFunction, globalScope, args);
+        Context.exit();
+    }
+    
     /**
      * The BProgram should set up its scope here (e.g. load the script for
      * BThreads). This method is called after {@link #setupGlobalScope()}.

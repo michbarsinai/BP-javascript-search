@@ -11,12 +11,14 @@ import bp.eventsets.EventSet;
 import bp.eventsets.Events;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 
@@ -114,4 +116,11 @@ public class BThreadJsProxy {
                                   .block(blockedEvents) );
     }
     
+    
+    public void setBreakUponHandler( Object aPossibleHandler ) {
+        bthread.setBreakUponHandler(
+                (aPossibleHandler instanceof Function) 
+                    ? Optional.of((Function) aPossibleHandler)
+                    : Optional.empty() );
+    }
 }

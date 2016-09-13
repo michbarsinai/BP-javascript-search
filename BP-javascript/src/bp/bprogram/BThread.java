@@ -6,18 +6,8 @@ import org.mozilla.javascript.*;
 import java.io.InputStream;
 import java.io.Serializable;
 
-import static bp.BProgramControls.debugMode;
 import bp.bprogram.jsproxy.BThreadJsProxy;
-import bp.eventsets.ComposableEventSet;
-import bp.eventsets.EventSet;
-import bp.eventsets.Events;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static java.util.stream.Collectors.toSet;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 /**
  * A Javascript BThread (NOT a Java thread!).
@@ -41,6 +31,12 @@ public class BThread implements Serializable {
     private boolean alive = true;
     private Context globalContext;
     private final BThreadJsProxy proxy = new BThreadJsProxy(this);
+    
+    /**
+     * BThreads may specify a function that runs when they are removed because
+     * of a {@code breakUpon} statement.
+     */
+    private Optional<Function> breakUponHandler = Optional.empty();
 
     public BThread(String aName, Function anEntryPoint) {
         name = aName;
@@ -49,11 +45,6 @@ public class BThread implements Serializable {
 
     public BThread() {
         this(BThread.class.getName(), null);
-    }
-
-    private void openGlobalContext() {
-        globalContext = ContextFactory.getGlobal().enterContext();
-        globalContext.setOptimizationLevel(-1); // must use interpreter mode
     }
 
     public void setupScope(Scriptable programScope) {
@@ -131,13 +122,21 @@ public class BThread implements Serializable {
     }
 
     public void bsync( RWBStatement aStatement ) {
+        if ( !isAlive() ) {
+            throw new IllegalStateException("Removed BThread cannot call bsync. Consider using enqueueExternalEvent.");
+        }
         currentRwbStatement = aStatement.setBthread(this);
         openGlobalContext();
         ContinuationPending capturedContinuation = globalContext.captureContinuation();
         closeGlobalContext();
         throw capturedContinuation;
     }
-
+    
+    private void openGlobalContext() {
+        globalContext = ContextFactory.getGlobal().enterContext();
+        globalContext.setOptimizationLevel(-1); // must use interpreter mode
+    }
+    
     private void closeGlobalContext() {
         Context.exit();
     }
@@ -188,4 +187,16 @@ public class BThread implements Serializable {
         this.alive = b;
     }
 
+    public Optional<Function> getBreakUponHandler() {
+        return breakUponHandler;
+    }
+
+    public void setBreakUponHandler(Function aBreakUponHandler) {
+        setBreakUponHandler(Optional.ofNullable(aBreakUponHandler));
+    }
+    
+    public void setBreakUponHandler(Optional<Function> aBreakUponHandler) {
+        breakUponHandler = aBreakUponHandler;
+    }
+ 
 }

@@ -36,7 +36,8 @@ public class BreakUponHandlerTest {
         eventLogger.getEvents().forEach(e->System.out.println(e) );
         EventPattern expected = new EventPattern()
                 .append(new BEvent("boom"))
-                .append(new BEvent("boom"));
+                .append(new BEvent("boom"))
+                .append(new BEvent("internalValue"));
         
         assertTrue( expected.matches(eventLogger.getEvents()) );
     }

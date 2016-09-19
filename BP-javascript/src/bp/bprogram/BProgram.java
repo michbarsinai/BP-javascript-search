@@ -330,10 +330,11 @@ public abstract class BProgram {
         if (!brokenUpon.isEmpty()) {
             bthreads.removeAll(brokenUpon);
             // FIXME allow these BTHreads last-chance event pumping.
-            brokenUpon.forEach(e -> {
-                e.setAlive(false);
-                listeners.forEach(l -> l.bthreadRemoved(this, e));
-                e.getBreakUponHandler().ifPresent( func -> executeInGlobalScope(func, new Object[]{selectedEvent}));
+            brokenUpon.forEach(bt -> {
+                bt.setAlive(false);
+                listeners.forEach(l -> l.bthreadRemoved(this, bt));
+                bt.getBreakUponHandler()
+                      .ifPresent( func -> executeInScope(func, bt.getScope(), new Object[]{selectedEvent}));
             });
         }
 
@@ -511,9 +512,13 @@ public abstract class BProgram {
     }
 
     protected void executeInGlobalScope( Function aFunction, Object[] args  ) {
+        executeInScope(aFunction, globalScope, args );
+    }
+    
+    protected void executeInScope( Function aFunction, Scriptable scope, Object[] args  ) {
         Context globalContext = ContextFactory.getGlobal().enterContext();
         globalContext.setOptimizationLevel(-1); // must use interpreter mode
-        globalContext.callFunctionWithContinuations(aFunction, globalScope, args);
+        globalContext.callFunctionWithContinuations(aFunction, scope, args);
         Context.exit();
     }
     

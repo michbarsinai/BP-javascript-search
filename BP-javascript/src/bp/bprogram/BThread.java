@@ -198,5 +198,9 @@ public class BThread implements Serializable {
     public void setBreakUponHandler(Optional<Function> aBreakUponHandler) {
         breakUponHandler = aBreakUponHandler;
     }
- 
+
+    public Scriptable getScope() {
+        return scope;
+    }
+    
 }

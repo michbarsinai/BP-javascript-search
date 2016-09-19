@@ -8,6 +8,9 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
+### 2016-09-18
+* :bug: `breakUpon` handlers are evaluated in the `BThread`'s context, rather than in the `BProgram` one.
+
 ### 2016-09-13
 #### Client code / Javascript
 * :sparkles: Updated the logging mechanism from global, single level to 3-level. Code change required: `bplog("hello") -> bp.log.info("hello)`. Also supports `warn` and `fine`.

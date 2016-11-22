@@ -5,9 +5,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * 
  * Utility class for commonly used event sets.
- * 
  */
 public class Events {
     /**

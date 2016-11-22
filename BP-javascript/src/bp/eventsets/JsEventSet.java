@@ -12,7 +12,7 @@ import org.mozilla.javascript.Function;
  * An event set whose predicate is a Javascript function.
  * @author michael
  */
-public class JsEventSet implements EventSet {
+public class JsEventSet implements EventSet, java.io.Serializable {
     
     private final Function predicate;
     private final String name;

@@ -15,14 +15,14 @@ import org.mozilla.javascript.Function;
  * prevent JS code from touching parts of the BProgram it shouldn't.
  * @author michael
  */
-public class BProgramJsProxy {
+public class BProgramJsProxy implements java.io.Serializable {
     
     public enum LogLevel {Off, Warn, Info, Fine}
     
-    public class BpLog {
+    public class BpLog implements java.io.Serializable {
         LogLevel level = LogLevel.Info;
         
-        public void Warn( String msg ) { log( LogLevel.Warn, msg ); }
+        public void warn( String msg ) { log( LogLevel.Warn, msg ); }
         public void info( String msg ) { log( LogLevel.Info, msg ); }
         public void fine( String msg ) { log( LogLevel.Fine, msg ); }
         

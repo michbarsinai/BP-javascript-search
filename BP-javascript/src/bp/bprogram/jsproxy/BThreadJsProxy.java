@@ -26,7 +26,7 @@ import org.mozilla.javascript.NativeObject;
  * The Javascript interface of a {@link BThread}.
  * @author michael
  */
-public class BThreadJsProxy {
+public class BThreadJsProxy implements java.io.Serializable {
     
     private final BThread bthread;
 
@@ -82,7 +82,7 @@ public class BThreadJsProxy {
         }
     }
     
-        /**
+    /**
      * BSync call, used by the JS programs. Works as follows:
      * <ol>
      * <li>Creates an {@link RWBStatement} using the parameters</li>

@@ -8,7 +8,7 @@ package bp.eventsets;
  * 
  * @author michael
  */
-public interface EventSet {
+public interface EventSet extends java.io.Serializable {
 	/**
 	 * Implementation of the set membership function.
 	 * 

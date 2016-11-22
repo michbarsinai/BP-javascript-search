@@ -5,8 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 @SuppressWarnings("serial")
-public class HashEventSet extends HashSet<EventSet> implements
-        EventSet, Serializable {
+public class HashEventSet extends HashSet<EventSet> implements EventSet, Serializable {
 
     private String name = null;
 

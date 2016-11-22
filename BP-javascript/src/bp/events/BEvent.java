@@ -1,3 +1,4 @@
+
 package bp.events;
 
 import static bp.BProgramControls.debugMode;
@@ -19,7 +20,7 @@ import org.mozilla.javascript.ScriptableObject;
  * only itself.
  */
 @SuppressWarnings("serial")
-public class BEvent implements Comparable<BEvent>, EventSet {
+public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializable {
 
     private static final AtomicInteger INSTANCE_ID_GEN = new AtomicInteger(0);
 
@@ -33,7 +34,7 @@ public class BEvent implements Comparable<BEvent>, EventSet {
      * Extra data for the event. Public access, so that the Javascript code
      * feels natural.
      */
-    public final Optional<Object> maybeData;
+    public final Object maybeData;
 
     public static BEvent named(String aName) {
         return new BEvent(aName);
@@ -54,7 +55,7 @@ public class BEvent implements Comparable<BEvent>, EventSet {
 
     @Override
     public String toString() {
-        return "[BEvent name:" + name + maybeData.map(d -> " data:" + d).orElse("") + "]";
+        return "[BEvent name:" + name + (maybeData!=null ? " data:" + maybeData : "") + "]";
     }
 
     public String getName() {
@@ -62,11 +63,11 @@ public class BEvent implements Comparable<BEvent>, EventSet {
     }
 
     public Object getData() {
-        return maybeData.orElse(null);
+        return maybeData;
     }
 
     public Optional<Object> getMaybeData() {
-        return maybeData;
+        return Optional.ofNullable(maybeData);
     }
 
     @Override
@@ -87,12 +88,12 @@ public class BEvent implements Comparable<BEvent>, EventSet {
         if (!name.equals(other.name)) {
             return false;
         }
-        if (maybeData.isPresent() != other.getMaybeData().isPresent()) {
+        if ( ! Objects.equals(maybeData, other.maybeData) ) {
             return false;
         }
 
         // OK, might need to delve into Javascript semantics.
-        if (maybeData.isPresent()) {
+        if (maybeData != null) {
             Object ourData = getData();
             Object theirData = other.getData();
             if (!(ourData.getClass().isAssignableFrom(theirData.getClass())
@@ -178,4 +179,5 @@ public class BEvent implements Comparable<BEvent>, EventSet {
         return Stream.of(o1Ids).allMatch(id -> jsObjectsEqual(o1.get(id), o2.get(id)))
                 && Stream.of(o2Ids).allMatch(id -> jsObjectsEqual(o1.get(id), o2.get(id)));
     }
+  
 }

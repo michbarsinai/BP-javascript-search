@@ -40,8 +40,7 @@ import org.mozilla.javascript.WrappedException;
 
 /**
  * Base class for BPrograms. Contains the logic for managing {@link BThread}s
- * and the main event loop. Lacks the technology-specific parts, such as
- * Javascript scope setups.
+ * and the main event loop.
  *
  * @author michael
  */
@@ -64,7 +63,7 @@ public abstract class BProgram {
                 sb.append(line);
             }
         } catch (IOException e) {
-            throw new RuntimeException("error while reading javascript fom stream", e);
+            throw new RuntimeException("error while reading javascript from stream", e);
         }
         String script = sb.toString();
         return evaluateInGlobalContext(scope, script, scriptName);

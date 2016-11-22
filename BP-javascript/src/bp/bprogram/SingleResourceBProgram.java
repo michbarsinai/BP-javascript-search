@@ -29,9 +29,6 @@ public class SingleResourceBProgram extends BProgram {
         this.resourceUri = resourceUri;
     }
 
-    
-    
-
     @Override
     protected void setupProgramScope(Scriptable scope) {
         evaluateInGlobalScope( resourceUri );

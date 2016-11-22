@@ -1,0 +1,85 @@
+@startuml
+
+package org.bprog.bp {
+
+package bprogram {
+  class BThreadState implements java.io.Serializable {
+
+  }
+
+  class BThreadInitialState {
+    name: String
+    entryPoint: Function
+  }
+
+  class BThreadStateAtBSync {
+    name: String
+    continuation: Continuation
+    statement: RWBStatement
+    breakUponHandler: Function
+  }
+
+  class BTTransition {
+    + advance(BThreadState):Optional<BThreadState>
+  }
+  class BTStart {
+    + subject: BThreadInitialState
+  }
+  class BTContinue {
+    + event: BEvent
+    + subject: BThreadStateAtBSync
+  }
+
+  class RWBStatement {
+    + request: ExplicitEventSet
+    + waitFor: EventSet
+    + block: EventSet
+    + breakUpon: EventSet
+  }
+
+  class BProgram {
+    state: Set<BThreadState>
+    externalEvents: Dequqe<BEvent>
+    listeners: Set<>
+  }
+}
+
+package events {
+  class BEvent
+}
+
+package eventsets {
+  interface EventSet {
+    contains(BEvent)
+  }
+  class ExplicitEventSet {
+    + events:Set<Event>
+  }
+
+  ExplicitEventSet .up.|> EventSet
+  ExplicitEventSet o--> "0..*" BEvent
+}
+
+BTTransition <|-- BTStart
+BTTransition <|-- BTContinue
+
+BThreadState <|-- BThreadInitialState
+BThreadState <|-- BThreadStateAtBSync
+
+BTStart *--> BThreadInitialState
+BTContinue *--> BThreadStateAtBSync
+
+BTTransition «uses»  ....> org.mozilla.javascript.Context
+BTTransition «generates» --> BThreadState
+BThreadInitialState *---> org.mozilla.javascript.Function
+BThreadStateAtBSync *---> org.mozilla.javascript.Function
+BThreadStateAtBSync *--> org.mozilla.javascript.Continuation
+BThreadStateAtBSync *--> "1" RWBStatement
+RWBStatement o--> "1" ExplicitEventSet
+RWBStatement o--> "3" EventSet
+BProgram *-->"1..*" BThreadState
+BProgram *-->"0..*" BEvent
+
+}
+
+@enduml

@@ -3,7 +3,7 @@
  */
 package bp.events;
 
-import bp.bprogram.BProgram;
+import bp.bprogram.runtimeengine.BProgram;
 import java.util.HashMap;
 import java.util.Map;
 import static org.junit.Assert.assertFalse;
@@ -28,6 +28,7 @@ public class BEventsJsTest {
             @Override
             protected void setupProgramScope(Scriptable aScope) {
                 aScope.put("events", aScope, Context.javaToJS(events, aScope));
+                
                 evaluateInGlobalContext(aScope,
                         "events.put('nameOnly1',       bpjs.Event('nameOnly'));\n"
                         + "events.put('nameOnly2',     bpjs.Event('nameOnly'));\n"

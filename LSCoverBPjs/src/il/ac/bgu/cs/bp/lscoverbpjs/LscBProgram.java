@@ -3,7 +3,7 @@
  */
 package il.ac.bgu.cs.bp.lscoverbpjs;
 
-import bp.bprogram.BProgram;
+import bp.bprogram.runtimeengine.BProgram;
 import org.mozilla.javascript.Scriptable;
 
 /**

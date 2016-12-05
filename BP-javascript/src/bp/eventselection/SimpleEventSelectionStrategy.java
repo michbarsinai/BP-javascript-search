@@ -1,8 +1,8 @@
 package bp.eventselection;
 
-import bp.bprogram.BSyncState;
+import bp.bprogram.runtimeengine.BProgramSyncSnapshot;
 import bp.events.BEvent;
-import bp.bprogram.RWBStatement;
+import bp.bprogram.runtimeengine.BSyncStatement;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.Events;
@@ -32,12 +32,12 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     }
     
     @Override
-    public EventSelectionResult select(BSyncState state) {
+    public EventSelectionResult select(BProgramSyncSnapshot state) {
         
-        List<RWBStatement> statements = state.getStatements();
+        List<BSyncStatement> statements = state.getStatements();
         EventSet blocked = ComposableEventSet.anyOf(statements.stream()
                 .filter( stmt -> stmt!=null )
-                .map( RWBStatement::getBlock )
+                .map(BSyncStatement::getBlock )
                 .filter(r -> r != Events.emptySet )
                 .collect( Collectors.toSet() ) );
         

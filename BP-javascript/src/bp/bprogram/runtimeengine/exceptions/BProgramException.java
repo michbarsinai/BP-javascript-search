@@ -1,7 +1,7 @@
 /*
  *  Author: Michael Bar-Sinai
  */
-package bp.bprogram.exceptions;
+package bp.bprogram.runtimeengine.exceptions;
 
 /**
  * Base class for exceptions thrown from a {@link BProgram}.

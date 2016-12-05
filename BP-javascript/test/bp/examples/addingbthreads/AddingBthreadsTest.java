@@ -1,9 +1,9 @@
 package bp.examples.addingbthreads;
 
-import bp.bprogram.BProgram;
+import bp.bprogram.runtimeengine.BProgram;
 import bp.events.BEvent;
-import bp.bprogram.listeners.InMemoryEventLoggingListener;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.listeners.InMemoryEventLoggingListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import bp.eventsets.EventSet;
 import bp.validation.eventpattern.EventPattern;
 import org.junit.Test;

@@ -4,7 +4,7 @@
 package bp.eventsets;
 
 import bp.events.*;
-import bp.bprogram.BProgram;
+import bp.bprogram.runtimeengine.BProgram;
 import java.util.HashMap;
 import java.util.Map;
 import static org.junit.Assert.assertFalse;
@@ -33,13 +33,26 @@ public class BEventSetsJsTest {
                 aScope.put("eventSets", aScope, Context.javaToJS(eventSets, aScope));
                 aScope.put("test", aScope, Context.javaToJS(BEventSetsJsTest.this, aScope));
                 evaluateInGlobalContext(aScope,
-                        "eventSets.put(\"esName\", bpjs.EventSet( 'x', function(e){ return e.name==\"Name\"; }) );\n" +
-                        "eventSets.put(\"esDataObjVizIsViz\", bpjs.EventSet( 'x',  function(e){ return (e.data != undefined) && e.data.viz===\"viz\"; }) );\n" +
-                        "eventSets.put(\"esDataIsViz\", bpjs.EventSet( 'x',  function(e){ return e.data==\"viz\"; }) );\n" +
-                        "events.put( \"eName\", bpjs.Event(\"Name\") );\n" +
-                        "events.put( \"eNotName\", bpjs.Event(\"NotName\") );\n" +
-                        "events.put( \"eVizObj\", bpjs.Event(\"name\", {viz:\"viz\"}) );\n" +
-                        "events.put( \"eViz\", bpjs.Event('name', 'viz') );"
+                        "eventSets.put(\"esName\", bp.EventSet( 'x', function(e){ "
+                                + "bp.log.info('esName');\n"
+                                + "bp.log.info(e);\n"
+                                + "bp.log.info(e.name);\n"
+                                + "bp.log.info( e.name==='Name' );\n"
+                                + "return e.name=='Name'; }) );\n" +
+                        "eventSets.put(\"esDataObjVizIsViz\", bp.EventSet( 'x',  function(e){ "
+                                + "bp.log.info('esDataObjVizIsViz');\n"
+                                + "bp.log.info(e);\n"
+                                + "return (e.data) ? e.data.viz=='viz' : false; }) );\n" +
+                        "eventSets.put(\"esDataIsViz\", bp.EventSet( 'x',  function(e){ "
+                                + "bp.log.info('esDataIsViz');\n"
+                                + "bp.log.info(e);\n"
+                                + "bp.log.info(e.data);\n"
+                                + "return e.data==\"viz\"; }) );\n" +
+                                
+                        "events.put( \"eName\", bp.Event(\"Name\") );\n" +
+                        "events.put( \"eNotName\", bp.Event(\"NotName\") );\n" +
+                        "events.put( \"eVizObj\", bp.Event(\"aName\", {viz:\"viz\"}) );\n" +
+                        "events.put( \"eViz\", bp.Event('aName', 'viz') );"
                         ,
                         "inline script" );
             }
@@ -68,8 +81,6 @@ public class BEventSetsJsTest {
         BEvent eName = events.get("eName");
         EventSet esDataVizIsViz = eventSets.get("esDataObjVizIsViz");
         EventSet esDataIsViz = eventSets.get("esDataIsViz");
-        
-        System.out.println("eViz = " + eViz);
         
         assertTrue( esDataVizIsViz.contains(eVizObj) );
         assertTrue( esDataIsViz.contains(eViz) );

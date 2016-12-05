@@ -1,9 +1,9 @@
 package bp.examples.breakupon;
 
 import bp.events.BEvent;
-import bp.bprogram.BProgram;
-import bp.bprogram.listeners.InMemoryEventLoggingListener;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.listeners.InMemoryEventLoggingListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;

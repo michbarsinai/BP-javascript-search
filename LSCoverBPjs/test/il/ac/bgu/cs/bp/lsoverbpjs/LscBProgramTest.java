@@ -3,10 +3,10 @@
  */
 package il.ac.bgu.cs.bp.lsoverbpjs;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.BThread;
-import bp.bprogram.listeners.BProgramListener;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
+import bp.bprogram.runtimeengine.listeners.BProgramListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import bp.events.BEvent;
 import bp.eventselection.EventSelectionResult;
 import org.junit.Test;
@@ -54,7 +54,7 @@ public class LscBProgramTest {
             }
         };
         System.out.println("Test Blocking");
-        sut.addListener( new BProgramListener() {
+        sut.addListener(new BProgramListener() {
             @Override
             public void started(BProgram bp) {
             }
@@ -64,11 +64,11 @@ public class LscBProgramTest {
             }
 
             @Override
-            public void bthreadAdded(BProgram bp, BThread theBThread) {
+            public void bthreadAdded(BProgram bp, BThreadSyncSnapshot theBThread) {
             }
 
             @Override
-            public void bthreadRemoved(BProgram bp, BThread theBThread) {
+            public void bthreadRemoved(BProgram bp, BThreadSyncSnapshot theBThread) {
             }
 
             @Override

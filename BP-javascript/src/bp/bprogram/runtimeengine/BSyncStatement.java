@@ -1,4 +1,4 @@
-package bp.bprogram;
+package bp.bprogram.runtimeengine;
 
 import bp.events.BEvent;
 import java.util.Objects;
@@ -11,12 +11,13 @@ import java.util.Set;
 import static bp.eventsets.Events.emptySet;
 
 /**
- * A statement a BTHread makes about what events it requests, waits for, and blocks.
- * The set of parameters for a [@code bSync} call.
+ * A statement a BThread makes at a {@code bsync} point. Contains data about 
+ * what events it requests, waits for, and blocks, and possible additional data,
+ * such as labels and break-upon event set.
  * 
  * @author michael
  */
-public class RWBStatement {
+public class BSyncStatement {
    
     /**
      * The event requested by this statement
@@ -38,7 +39,7 @@ public class RWBStatement {
      */
     private final EventSet breakUpon;    
     
-    private BThread bthread;
+    private BThreadSyncSnapshot bthread;
     
     /**
      * Creates a new request where all fields are set to {@link none}. To be
@@ -46,26 +47,24 @@ public class RWBStatement {
      * <code>
      * RWBStatement myStatement = make().request( XX ).waitFor( YY ).block( ZZZ );
      * </code>
-     * @param creator the {@link BThread} that created this statument.
+     * @param creator the {@link BThreadSyncSnapshot} that created this statument.
      * @return an empty statement
      */
-    public static RWBStatement make(BThread creator) {
-        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet).setBthread(creator);
+    public static BSyncStatement make(BThreadSyncSnapshot creator) {
+        return new BSyncStatement(Collections.emptySet(), emptySet, emptySet, emptySet).setBthread(creator);
     }
-    public static RWBStatement make() {
-        return new RWBStatement(Collections.emptySet(), emptySet, emptySet, emptySet);
+    public static BSyncStatement make() {
+        return new BSyncStatement(Collections.emptySet(), emptySet, emptySet, emptySet);
     }
     
-    
-    
-    public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block, EventSet except) {
+    public BSyncStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block, EventSet except) {
         this.request = new HashSet<>(request);
         this.waitFor = waitFor;
         this.block = block;
         this.breakUpon = except;
     }
 
-    public RWBStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block) {
+    public BSyncStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block) {
         this(request, waitFor, block, emptySet);
     }
     
@@ -74,33 +73,33 @@ public class RWBStatement {
     }
     
     /**
-     * Creates a new {@link RWBStatement} based on {@code this}, with the 
+     * Creates a new {@link BSyncStatement} based on {@code this}, with the 
      * request updated to the {@code toRequest} parameter.
      * @param toRequest the request part of the new statement
      * @return a new statement
      */
-    public RWBStatement request( Collection<? extends BEvent> toRequest ) {
-        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
+    public BSyncStatement request( Collection<? extends BEvent> toRequest ) {
+        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
     }
-    public RWBStatement request( BEvent requestedEvent ) {
+    public BSyncStatement request( BEvent requestedEvent ) {
         Set<BEvent> toRequest = new HashSet<>();
         toRequest.add(requestedEvent);
-        return new RWBStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
+        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
     }
-    public RWBStatement request( ExplicitEventSet ees ) {
-        return new RWBStatement(ees.getCollection(), getWaitFor(), getBlock(), getBreakUpon());
+    public BSyncStatement request( ExplicitEventSet ees ) {
+        return new BSyncStatement(ees.getCollection(), getWaitFor(), getBlock(), getBreakUpon());
     }
     
-    public RWBStatement waitFor( EventSet events ) {
-        return new RWBStatement(getRequest(), events, getBlock(), getBreakUpon());
+    public BSyncStatement waitFor( EventSet events ) {
+        return new BSyncStatement(getRequest(), events, getBlock(), getBreakUpon());
     }
 
-    public RWBStatement block( EventSet events ) {
-        return new RWBStatement(getRequest(), getWaitFor(), events, getBreakUpon());
+    public BSyncStatement block( EventSet events ) {
+        return new BSyncStatement(getRequest(), getWaitFor(), events, getBreakUpon());
     }
     
-    public RWBStatement breakUpon( EventSet events ) {
-        return new RWBStatement(getRequest(), getWaitFor(), getBlock(), events);
+    public BSyncStatement breakUpon( EventSet events ) {
+        return new BSyncStatement(getRequest(), getWaitFor(), getBlock(), events);
     }
     
     public Collection<BEvent> getRequest() {
@@ -119,11 +118,11 @@ public class RWBStatement {
         return breakUpon;
     }
 
-    public BThread getBthread() {
+    public BThreadSyncSnapshot getBthread() {
         return bthread;
     }
 
-    public RWBStatement setBthread(BThread bthread) {
+    public BSyncStatement setBthread(BThreadSyncSnapshot bthread) {
         this.bthread = bthread;
         return this;
     }
@@ -148,10 +147,10 @@ public class RWBStatement {
         if (obj == null) {
             return false;
         }
-        if (! (obj instanceof RWBStatement)) {
+        if (! (obj instanceof BSyncStatement)) {
             return false;
         }
-        final RWBStatement other = (RWBStatement) obj;
+        final BSyncStatement other = (BSyncStatement) obj;
         if (!Objects.equals(this.getRequest(), other.getRequest())) {
             return false;
         }

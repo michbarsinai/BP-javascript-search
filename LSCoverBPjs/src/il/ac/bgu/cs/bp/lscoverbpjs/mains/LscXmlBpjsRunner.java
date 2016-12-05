@@ -1,7 +1,7 @@
 package il.ac.bgu.cs.bp.lscoverbpjs.mains;
 
 import il.ac.bgu.cs.bp.lscoverbpjs.XQueryRunner;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import il.ac.bgu.cs.bp.lscoverbpjs.LscBProgram;
 import il.ac.bgu.cs.bp.lscoverbpjs.XQueryRunnerException;
 import java.io.IOException;

@@ -1,12 +1,13 @@
 /*
  *  Author: Michael Bar-Sinai
  */
-package bp.bprogram.jsproxy;
+package bp.bprogram.runtimeengine.jsproxy;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.BThread;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.events.BEvent;
 import bp.eventsets.JsEventSet;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.javascript.Function;
 
@@ -63,7 +64,7 @@ public class BProgramJsProxy implements java.io.Serializable {
      * @return an event with the passed name.
      */
     public BEvent Event(String name, Object jsData) {
-        return new BEvent(name, jsData);
+        return new BEvent(name, Optional.ofNullable(jsData) );
     }
     
     public JsEventSet EventSet(String name, Function predicate) {
@@ -79,7 +80,7 @@ public class BProgramJsProxy implements java.io.Serializable {
      * @see #registerBThread(org.mozilla.javascript.Function)
      */
     public void registerBThread(String name, Function func) {
-        program.registerBThread(new BThread(name, func));
+        program.registerBThread(new BThreadSyncSnapshot(name, func));
     }
 
     /**

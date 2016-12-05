@@ -1,14 +1,14 @@
 package bp.exceptions;
 
-import bp.bprogram.BThread;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 
 @SuppressWarnings("serial")
 public class BPJDuplicatePrioritiesException extends BPJException {
 
-	BThread existing;
-	BThread newBT;
+	BThreadSyncSnapshot existing;
+	BThreadSyncSnapshot newBT;
 	
-	public BPJDuplicatePrioritiesException(BThread existing, BThread newBT) {
+	public BPJDuplicatePrioritiesException(BThreadSyncSnapshot existing, BThreadSyncSnapshot newBT) {
 		this.existing = existing;
 		this.newBT = newBT;
 	}

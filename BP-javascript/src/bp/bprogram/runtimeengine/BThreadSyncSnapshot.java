@@ -1,4 +1,4 @@
-package bp.bprogram;
+package bp.bprogram.runtimeengine;
 
 import bp.events.BEvent;
 import org.mozilla.javascript.*;
@@ -6,16 +6,16 @@ import org.mozilla.javascript.*;
 import java.io.InputStream;
 import java.io.Serializable;
 
-import bp.bprogram.jsproxy.BThreadJsProxy;
+import bp.bprogram.runtimeengine.jsproxy.BThreadJsProxy;
 import java.util.Optional;
 
 /**
- * A Javascript BThread (NOT a Java thread!).
+ * The state of a BThread at {@code bsync}.
  *
  * @author orelmosheweinstock
  * @author Michael
  */
-public class BThread implements Serializable {
+public class BThreadSyncSnapshot implements Serializable {
 
     /**
      * The Javascript function that will be called when {@code this} BThread
@@ -27,9 +27,9 @@ public class BThread implements Serializable {
     private Scriptable scope;
     private ContinuationPending continuation;
 
-    private RWBStatement currentRwbStatement;
+    private BSyncStatement bSyncStatement;
     private boolean alive = true;
-    private Context globalContext;
+    private Context globalContext; // TODO needed?
     private final BThreadJsProxy proxy = new BThreadJsProxy(this);
     
     /**
@@ -38,15 +38,28 @@ public class BThread implements Serializable {
      */
     private Optional<Function> breakUponHandler = Optional.empty();
 
-    public BThread(String aName, Function anEntryPoint) {
+    public BThreadSyncSnapshot(String aName, Function anEntryPoint) {
         name = aName;
         entryPoint = anEntryPoint;
     }
 
-    public BThread() {
-        this(BThread.class.getName(), null);
+    public BThreadSyncSnapshot() {
+        this(BThreadSyncSnapshot.class.getName(), null);
     }
+    
+    public BThreadSyncSnapshot copyWith( ContinuationPending aContinuation, BSyncStatement aStatement ) {
+        BThreadSyncSnapshot retVal = new BThreadSyncSnapshot(name, entryPoint);
+        retVal.globalContext = globalContext; // TODO needed?
+        retVal.continuation = aContinuation;
+        retVal.setBreakUponHandler(getBreakUponHandler());
+        retVal.setupScope(scope.getParentScope());
 
+        retVal.bSyncStatement = aStatement;
+        aStatement.setBthread(retVal);
+        
+        return retVal;
+    }
+    
     public void setupScope(Scriptable programScope) {
         scope = (Scriptable) Context.javaToJS(proxy, programScope);
         scope.setPrototype(programScope);
@@ -59,76 +72,15 @@ public class BThread implements Serializable {
         entryPoint.setParentScope(scope);
     }
 
-    public Scriptable generateSubScope(Scriptable scope, InputStream ios,
-            String scriptName) {
-        Scriptable tScope = (Scriptable) BProgram.evaluateInGlobalContext(
-                scope,
-                ios,
-                scriptName);
-        tScope.setPrototype(scope);
-        return tScope;
-    }
-
-    public void start() {
-        try {
-            openGlobalContext();
-            continuation = null;
-            globalContext.callFunctionWithContinuations(entryPoint, scope, new Object[0]);
-            enterZombieMode(); // If we got here, there was no bSync in the JS code.
-
-        } catch (ContinuationPending pending) {
-            continuation = pending;
-            if (currentRwbStatement == null) {
-                System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
-                throw new IllegalStateException("BSync called but no statement registered");
-            }
-
-        } finally {
-            closeGlobalContext();
-        }
-    }
-
-    /**
-     * Resumes the Javascript program, returning the passed object as the return
-     * value of the {@code bSync} call that created the continuation.
-     *
-     * @param event The selected event.
-     * @return A pending continuation, or {@code null}.
-     */
-    // TODO return Optional
-    public ContinuationPending resume(BEvent event) {
-        try {
-            Object toResume = continuation.getContinuation();
-            continuation = null;
-            currentRwbStatement = null;
-            openGlobalContext();
-            Object eventInJS = Context.javaToJS(event, scope);
-            globalContext.resumeContinuation(toResume, scope, eventInJS);
-
-        } catch (ContinuationPending pending) {
-            if (currentRwbStatement == null) {
-                System.err.println("Bthread " + getName() + " got a continuation but no RWBStatement.");
-                throw new IllegalStateException("BSync called but no statement registered");
-            }
-            continuation = pending;
-            return continuation;
-
-        } finally {
-            closeGlobalContext();
-        }
-
-        enterZombieMode();
-        return null;
-    }
-
-    public void bsync( RWBStatement aStatement ) {
-        if ( !isAlive() ) {
+    public void bsync( BSyncStatement aStatement ) {
+        if ( !isAlive() ) { // TODO: this might be redaundant now that we delete bsync from the scope of breakupon handlers.
             throw new IllegalStateException("Removed BThread cannot call bsync. Consider using enqueueExternalEvent.");
         }
-        currentRwbStatement = aStatement.setBthread(this);
-        openGlobalContext();
+        bSyncStatement = aStatement.setBthread(this);
+        openGlobalContext(); // TODO try without the global context field, openingna dn clsing it. Might be already delt with at the BPTask level.
         ContinuationPending capturedContinuation = globalContext.captureContinuation();
         closeGlobalContext();
+        capturedContinuation.setApplicationState(aStatement);
         throw capturedContinuation;
     }
     
@@ -142,19 +94,19 @@ public class BThread implements Serializable {
     }
 
     public void enterZombieMode() {
-        currentRwbStatement = null;
+        bSyncStatement = null;
         continuation = null;
         alive = false;
     }
 
-    public RWBStatement getCurrentRwbStatement() {
-        return currentRwbStatement;
+    public BSyncStatement getBSyncStatement() {
+        return bSyncStatement;
     }
 
-    public void setCurrentRwbStatement(RWBStatement stmt) {
-        currentRwbStatement = stmt;
-        if ( currentRwbStatement.getBthread() != this ) {
-            currentRwbStatement.setBthread(this);
+    public void setBSyncStatement(BSyncStatement stmt) {
+        bSyncStatement = stmt;
+        if ( bSyncStatement.getBthread() != this ) {
+            bSyncStatement.setBthread(this);
         }
     }
 
@@ -201,6 +153,10 @@ public class BThread implements Serializable {
 
     public Scriptable getScope() {
         return scope;
+    }
+
+    public Function getEntryPoint() {
+        return entryPoint;
     }
     
 }

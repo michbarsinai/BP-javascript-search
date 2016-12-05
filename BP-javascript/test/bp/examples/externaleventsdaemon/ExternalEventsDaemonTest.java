@@ -1,8 +1,8 @@
 package bp.examples.externaleventsdaemon;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.listeners.InMemoryEventLoggingListener;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.listeners.InMemoryEventLoggingListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import bp.events.BEvent;
 import bp.validation.eventpattern.EventPattern;
 import java.util.logging.Level;

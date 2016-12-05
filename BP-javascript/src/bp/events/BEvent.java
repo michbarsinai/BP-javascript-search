@@ -14,7 +14,7 @@ import org.mozilla.javascript.ScriptableObject;
  * A base class for events. Each event has a name and optional data, which is a
  * Javascript object.
  *
- * For two events to be equal, they names and data have to match.
+ * For two events to be equal, their names and data have to match.
  *
  * Each event implicitly defines a singleton {@link EventSet}, which contains
  * only itself.
@@ -34,19 +34,19 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
      * Extra data for the event. Public access, so that the Javascript code
      * feels natural.
      */
-    public final Object maybeData;
+    public final Optional<Object> maybeData;
 
     public static BEvent named(String aName) {
         return new BEvent(aName);
     }
 
     public BEvent(String aName) {
-        this(aName, null);
+        this(aName, Optional.empty());
     }
 
-    public BEvent(String aName, Object someData) {
+    public BEvent(String aName, Optional<Object> someData) {
         name = aName;
-        maybeData = Optional.ofNullable(someData);
+        maybeData = someData;
     }
 
     public BEvent() {
@@ -55,19 +55,29 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
 
     @Override
     public String toString() {
-        return "[BEvent name:" + name + (maybeData!=null ? " data:" + maybeData : "") + "]";
+        return "[BEvent name:" + name + (maybeData.map(v -> " data:" + v).orElse("")) + "]";
     }
 
     public String getName() {
         return name;
     }
 
-    public Object getData() {
+    /**
+     * @return The data field of the event.
+     */
+    public Optional<Object> getDataField() {
         return maybeData;
     }
-
-    public Optional<Object> getMaybeData() {
-        return Optional.ofNullable(maybeData);
+    
+    /**
+     * A Javascript accessor for the event's data. If you are using this method 
+     * from Java code, you may want to consider using {@link #getDataField()}.
+     * 
+     * @return the event's data, or {@code null}.
+     * @see #getDataField() 
+     */
+    public Object getData() {
+        return maybeData.orElse(null);
     }
 
     @Override
@@ -88,14 +98,16 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
         if (!name.equals(other.name)) {
             return false;
         }
-        if ( ! Objects.equals(maybeData, other.maybeData) ) {
+        
+        if ( maybeData.isPresent() ^ (other.getDataField().isPresent()) ) {
+            // one has data, the other does not.
             return false;
         }
 
-        // OK, might need to delve into Javascript semantics.
-        if (maybeData != null) {
-            Object ourData = getData();
-            Object theirData = other.getData();
+        if (maybeData.isPresent()) { // and, by above test, other also has data
+            // OK, delve into Javascript semantics.
+            Object ourData = maybeData.get();
+            Object theirData = other.getDataField().get();
             if (!(ourData.getClass().isAssignableFrom(theirData.getClass())
                     || theirData.getClass().isAssignableFrom(ourData.getClass()))) {
                 return false; // not same type of data.
@@ -105,7 +117,7 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
             return jsObjectsEqual(ourData, theirData);
 
         } else {
-            // whew
+            // whew - both don't have data
             return true;
         }
     }

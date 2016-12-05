@@ -1,9 +1,9 @@
 package bp.eventselection;
 
-import bp.bprogram.BSyncState;
+import bp.bprogram.runtimeengine.BProgramSyncSnapshot;
 
 /**
- * Strategy for selecting events from a {@link BSyncState}.
+ * Strategy for selecting events from a {@link BProgramSyncSnapshot}.
  * The selection result might be an event, a deadlock detection, or no event
  * (i.e. nobody requested anything).
  * 
@@ -11,6 +11,6 @@ import bp.bprogram.BSyncState;
  */
 public interface EventSelectionStrategy {
    
-    EventSelectionResult select(BSyncState state);
+    EventSelectionResult select(BProgramSyncSnapshot state);
     
 }

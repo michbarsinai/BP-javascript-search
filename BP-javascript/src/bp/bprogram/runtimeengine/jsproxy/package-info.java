@@ -8,4 +8,4 @@
  * 
  * Author: Michael Bar-Sinai
  */
-package bp.bprogram.jsproxy;
+package bp.bprogram.runtimeengine.jsproxy;

@@ -1,10 +1,10 @@
 /*
  *  Author: Michael Bar-Sinai
  */
-package bp.bprogram.jsproxy;
+package bp.bprogram.runtimeengine.jsproxy;
 
-import bp.bprogram.BThread;
-import bp.bprogram.RWBStatement;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
+import bp.bprogram.runtimeengine.BSyncStatement;
 import bp.events.BEvent;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
@@ -23,21 +23,21 @@ import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 
 /**
- * The Javascript interface of a {@link BThread}.
+ * The Javascript interface of a {@link BThreadSyncSnapshot}.
  * @author michael
  */
 public class BThreadJsProxy implements java.io.Serializable {
     
-    private final BThread bthread;
+    private final BThreadSyncSnapshot bthread;
 
-    public BThreadJsProxy(BThread bthread) {
+    public BThreadJsProxy(BThreadSyncSnapshot bthread) {
         this.bthread = bthread;
     }
     
     public void bsync( NativeObject jsRWB ) {
         Map<String, Object> jRWB = (Map)Context.jsToJava(jsRWB, Map.class);
         
-        RWBStatement stmt = RWBStatement.make();
+        BSyncStatement stmt = BSyncStatement.make();
         Object req = jRWB.get("request");
         if ( req != null ) {
             if ( req instanceof BEvent ) {
@@ -77,7 +77,7 @@ public class BThreadJsProxy implements java.io.Serializable {
                     .collect( toSet() ) );
         } else {
             final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
-            Logger.getLogger(BThread.class.getName()).log(Level.SEVERE, errorMessage);
+            Logger.getLogger(BThreadSyncSnapshot.class.getName()).log(Level.SEVERE, errorMessage);
             throw new IllegalArgumentException( errorMessage);
         }
     }
@@ -85,7 +85,7 @@ public class BThreadJsProxy implements java.io.Serializable {
     /**
      * BSync call, used by the JS programs. Works as follows:
      * <ol>
-     * <li>Creates an {@link RWBStatement} using the parameters</li>
+     * <li>Creates an {@link BSyncStatement} using the parameters</li>
      * <li>Captures a continuation</li>
      * <li>Cleans up current Javascript context</li>
      * <li>Throws the continuation</li>
@@ -99,7 +99,7 @@ public class BThreadJsProxy implements java.io.Serializable {
                       EventSet waitedEvents,
                       EventSet blockedEvents) {
         System.err.println("warning: positional bsync (bsync(r,w,b)) is deprecated. Use named arguemnt bsync (bsync({requested:...})) instead.");
-        bthread.bsync( RWBStatement.make().request(requestedEvents)
+        bthread.bsync(BSyncStatement.make().request(requestedEvents)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents) );
     }
@@ -111,7 +111,7 @@ public class BThreadJsProxy implements java.io.Serializable {
                       EventSet waitedEvents,
                       EventSet blockedEvents) {
         System.err.println("warning: positional bsync (bsync(r,w,b)) is deprecated. Use named arguemnt bsync (bsync({requested:...})) instead.");
-        bthread.bsync( RWBStatement.make().request(aRequestedEvent)
+        bthread.bsync(BSyncStatement.make().request(aRequestedEvent)
                                   .waitFor(waitedEvents)
                                   .block(blockedEvents) );
     }

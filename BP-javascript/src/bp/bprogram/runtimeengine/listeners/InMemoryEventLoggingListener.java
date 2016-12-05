@@ -1,7 +1,7 @@
-package bp.bprogram.listeners;
+package bp.bprogram.runtimeengine.listeners;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.BThread;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.events.BEvent;
 import bp.eventselection.EventSelectionResult;
 import java.util.ArrayList;
@@ -24,11 +24,11 @@ public class InMemoryEventLoggingListener implements BProgramListener {
     }
 
     @Override
-    public void bthreadAdded(BProgram bp, BThread theBThread) {
+    public void bthreadAdded(BProgram bp, BThreadSyncSnapshot theBThread) {
     }
 
     @Override
-    public void bthreadRemoved(BProgram bp, BThread theBThread) {
+    public void bthreadRemoved(BProgram bp, BThreadSyncSnapshot theBThread) {
     }
 
     @Override

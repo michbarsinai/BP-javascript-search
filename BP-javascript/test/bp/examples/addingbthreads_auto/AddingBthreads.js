@@ -6,9 +6,9 @@
 bp.log.info("Program Loaded");
 
 // Define the events.
-var kidADone  = bp.Event("kidADone");
-var kidBDone  = bp.Event("kidBDone");
-var parentDone= bp.Event("parentDone");
+var kidADone   = bp.Event("kidADone");
+var kidBDone   = bp.Event("kidBDone");
+var parentDone = bp.Event("parentDone");
 
 bp.registerBThread("parentBThread", function () {
     
@@ -17,23 +17,23 @@ bp.registerBThread("parentBThread", function () {
     // first one, text for behavior on the start() method.
     bp.registerBThread( function() {
         bp.log.info("kid a1 started");
-        bsync(kidADone, emptySet, parentDone);
+        bsync({request:kidADone, block:parentDone});
     });
     bp.registerBThread( function() {
         bp.log.info("kid b1 started");
-        bsync(kidBDone, emptySet, parentDone);
+        bsync({request:kidBDone, block:parentDone});
     });
-    bsync( parentDone, emptySet, emptySet );
+    bsync( {request: parentDone} );
     
     
-    // second one, test for behavior on the resume() method.
+    // second round, test for behavior on the resume() method.
     bp.registerBThread( function() {
-        bsync(kidADone, emptySet, parentDone);
+        bsync({request:kidADone, block:parentDone});
     });
     bp.registerBThread( function() {
-        bsync(kidBDone, emptySet, parentDone);
+        bsync({request:kidBDone, block:parentDone});
     });
-    bsync( parentDone, emptySet, emptySet );
+    bsync( {request: parentDone} );
     
 });
 

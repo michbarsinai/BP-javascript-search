@@ -3,10 +3,10 @@
  */
 package bp.examples.jseventset;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.SingleResourceBProgram;
-import bp.bprogram.listeners.InMemoryEventLoggingListener;
-import bp.bprogram.listeners.StreamLoggerListener;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.SingleResourceBProgram;
+import bp.bprogram.runtimeengine.listeners.InMemoryEventLoggingListener;
+import bp.bprogram.runtimeengine.listeners.StreamLoggerListener;
 import bp.events.BEvent;
 import java.net.URISyntaxException;
 import java.util.Arrays;

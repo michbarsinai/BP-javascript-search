@@ -3,8 +3,8 @@
  */
 package bp;
 
-import bp.bprogram.BProgram;
-import bp.bprogram.BThread;
+import bp.bprogram.runtimeengine.BProgram;
+import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.eventselection.EventSelectionResult;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,7 +42,7 @@ public class ContinuationGames {
         public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
             ScriptableOutputStream outs = null;
             try {
-                BThread bt = bthreads.iterator().next();
+                BThreadSyncSnapshot bt = bthreads.iterator().next();
                 ContinuationPending cnt = bt.getContinuation();
 //                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 Context.enter();

@@ -6,6 +6,6 @@ var ext1 = bpjs.Event("ext1");
 
 bpjs.registerBThread("In1", function() {
     bsync( in1a, emptySet, emptySet );
-    bsync( noEvents, ext1, emptySet );
+    bsync( {waitFor:ext1} );
     bsync( in1b, emptySet, emptySet );
 });

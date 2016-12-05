@@ -175,6 +175,8 @@ public abstract class BProgram {
         }
     }
 
+    final ResultHandler handler = new ResultHandler();
+ 
     /**
      * Advances the BProgram a single super-step, that is until there are no
      * more internal events that can be selected.
@@ -185,14 +187,16 @@ public abstract class BProgram {
     public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
 
         handler.endResult = null;
-        while (eventSelectionStrategy.select(createSnapshot()).accept(handler)) {
+        while (eventSelectionStrategy.select(currentStatements(), enqueuedExternalEvents).accept(handler)) {
+            recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
+            if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
+                daemonMode = false;
+            }
         }
         listeners.forEach(l -> l.superstepDone(this, handler.endResult));
         return handler.endResult;
 
     }
-    
-    final ResultHandler handler = new ResultHandler();
     
     /**
      * Awakens BThreads that waited for/requested this event in their last
@@ -201,7 +205,7 @@ public abstract class BProgram {
      * @param selectedEvent The event to trigger. Cannot be {@code null}.
      * @throws java.lang.InterruptedException
      */
-    public void triggerEvent(BEvent selectedEvent) throws InterruptedException {
+    public void triggerEvent( BEvent selectedEvent) throws InterruptedException {
         if (selectedEvent == null) {
             throw new IllegalArgumentException("Cannot trigger a null event.");
         }
@@ -221,7 +225,6 @@ public abstract class BProgram {
         if (!brokenUpon.isEmpty()) {
             bthreads.removeAll(brokenUpon);
             brokenUpon.forEach(bt -> {
-                bt.setAlive(false);
                 listeners.forEach(l -> l.bthreadRemoved(this, bt));
                 bt.getBreakUponHandler()
                       .ifPresent( func -> {
@@ -254,10 +257,18 @@ public abstract class BProgram {
                 .collect(toSet()) );
     }
 
-     private List<Future<Optional<BThreadSyncSnapshot>>> startRecentlyRegisteredBThreads() throws InterruptedException {
+    private List<Future<Optional<BThreadSyncSnapshot>>> startRecentlyRegisteredBThreads() throws InterruptedException {
+        
+        // Setup the new BThread's scopes.
+        try {
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
+            recentlyRegisteredBthreads.forEach(bt -> setupAddedBThread(bt));
+        } finally {
+            Context.exit();
+        }
 
-        recentlyRegisteredBthreads.forEach(bt -> setupAddedBThread(bt));
-
+        // run the new BThreads.
         final List<Future<Optional<BThreadSyncSnapshot>>> result = executor.invokeAll(recentlyRegisteredBthreads.stream()
                 .map(bt -> new StartBThread(bt))
                 .collect(toList()));
@@ -311,7 +322,11 @@ public abstract class BProgram {
             Logger.getLogger(BProgram.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
+    public BProgramSyncSnapshot getSnapshot() {
+        return new BProgramSyncSnapshot(bthreads, enqueuedExternalEvents);
+    }
+    
     /**
      * makes the obj available in the java script code , under the given name
      * "objName"
@@ -337,7 +352,6 @@ public abstract class BProgram {
      */
     public void registerBThread(BThreadSyncSnapshot bt) {
         if (started) {
-            bplog("Registered " + bt.getName());
             recentlyRegisteredBthreads.add(bt);
         } else {
             add(bt);
@@ -359,10 +373,10 @@ public abstract class BProgram {
      *
      * @return list of statements in arbitrary order.
      */
-    public List<BSyncStatement> currentStatements() {
+    public Set<BSyncStatement> currentStatements() {
         return bthreads.stream()
                 .map(BThreadSyncSnapshot::getBSyncStatement)
-                .collect(toList());
+                .collect(toSet());
     }
 
     /**
@@ -374,15 +388,6 @@ public abstract class BProgram {
         recentlyEnquqedExternalEvents.add(e);
     }
 
-    protected BProgramSyncSnapshot createSnapshot() {
-        recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
-        if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
-            daemonMode = false;
-        }
-        return new BProgramSyncSnapshot(currentStatements(), Collections.unmodifiableList(enqueuedExternalEvents));
-    }
-
-   
     /**
      * Sets up internal data structures for running.
      */
@@ -392,14 +397,7 @@ public abstract class BProgram {
     }
 
     protected void setupAddedBThread(BThreadSyncSnapshot bt) {
-        // TODO: are all the global-scope thingies needed?
-        try {
-            Context cx = ContextFactory.getGlobal().enterContext();
-            cx.setOptimizationLevel(-1); // must use interpreter mode
-            bt.setupScope(globalScope);
-        } finally {
-            Context.exit();
-        }
+        bt.setupScope(globalScope);
     }
 
     protected void setupBThreadScopes() {
@@ -429,10 +427,6 @@ public abstract class BProgram {
                     Context.javaToJS(emptySet, globalScope));
             globalScope.put("all", globalScope,
                     Context.javaToJS(all, globalScope));
-
-            // TODO this should go, now that we have named params for bSync
-            globalScope.put("noEvents", globalScope,
-                    Context.javaToJS(Events.noEvents, globalScope));
 
             evaluateInGlobalScope(script, GLOBAL_SCOPE_INIT);
 
@@ -511,10 +505,6 @@ public abstract class BProgram {
     void finalizeRound() {
         bthreads = nextRoundBthreads;
         nextRoundBthreads = null;
-    }
-
-    public void bplog(String string) {// TODO remove in favor of bp.log.info et al
-        System.out.println("[" + this + "]: " + string);
     }
 
     public Set<BThreadSyncSnapshot> getBThreads() {
@@ -608,16 +598,4 @@ public abstract class BProgram {
 
     }
     
-    ////////////////////////////////////////////////////////////////////////////
-    /// Debugging Stuff. Can probably go away. TODO: make this go away.
-    /**
-     * Utility function (for debugging purposes) that prints the ordered list of
-     * active be-threads.
-     */
-    public void printAllBThreads() {
-        int c = 0;
-        for (BThreadSyncSnapshot bt : getBThreads()) {
-            bplog("\t" + (c++) + ":" + bt);
-        }
-    }
 }

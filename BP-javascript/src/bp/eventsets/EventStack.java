@@ -4,9 +4,7 @@ import java.util.Iterator;
 import java.util.Stack;
 
 /**
- * Created by orelmosheweinstock on 5/26/15.
- * 
- * Michael: At the moment, this class is not used. Maybe used for the verification parts?
+ * Part of the whileBlocking mechanism.
  */
 public class EventStack extends Stack<EventSet>
         implements EventSet {

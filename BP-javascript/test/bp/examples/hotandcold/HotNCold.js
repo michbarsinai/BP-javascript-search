@@ -17,8 +17,8 @@ bp.registerBThread("ColdBt", function() {
 
 bp.registerBThread("AlternatorBt", function() {
     for (i = 0; i < 3; i++) {
-        bsync(noEvents, coldEvent, hotEvent); // block hot first, so as not to burn our thumb.
-        bsync(noEvents, hotEvent, coldEvent);
+        bsync({waitFor:coldEvent, block:hotEvent}); // block hot first, so as not to burn our thumb.
+        bsync({waitFor:hotEvent, block:coldEvent});
     }
     bsync(bp.Event("allDone"), emptySet, emptySet);
 });

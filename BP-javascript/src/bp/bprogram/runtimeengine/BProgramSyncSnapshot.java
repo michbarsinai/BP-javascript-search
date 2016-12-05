@@ -2,10 +2,11 @@ package bp.bprogram.runtimeengine;
 
 import bp.events.BEvent;
 import java.util.List;
+import java.util.Set;
+import static java.util.stream.Collectors.toList;
 
 /**
  * The state of a {@link BProgram} at {@code bsync}.
- * Holds information needed at BSync, such as {@link BSyncStatement}s and external events.
  * 
  * <p>
  * For search: this class would serve as (part of?) the nodes in the search tree.
@@ -15,11 +16,11 @@ import java.util.List;
  */
 public class BProgramSyncSnapshot {
     
-    private final List<BSyncStatement> statements;
+    private final Set<BThreadSyncSnapshot> threadSnapshots;
     private final List<BEvent> externalEvents;
 
-    public BProgramSyncSnapshot(List<BSyncStatement> statements, List<BEvent> externalEvents) {
-        this.statements = statements;
+    public BProgramSyncSnapshot(Set<BThreadSyncSnapshot> threadSnapshots, List<BEvent> externalEvents) {
+        this.threadSnapshots = threadSnapshots;
         this.externalEvents = externalEvents;
     }
 
@@ -27,8 +28,14 @@ public class BProgramSyncSnapshot {
         return externalEvents;
     }
 
-    public List<BSyncStatement> getStatements() {
-        return statements;
+    public Set<BThreadSyncSnapshot> getStatements() {
+        return threadSnapshots;
+    }
+    
+    public List<BSyncStatement> syncStatements() {
+        return threadSnapshots.stream()
+                .map(BThreadSyncSnapshot::getBSyncStatement)
+                .collect(toList());
     }
     
 }

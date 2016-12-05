@@ -21,10 +21,11 @@ import java.util.stream.Collectors;
 public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     
     private final Random rnd;
+    private final long seed;
     
     public SimpleEventSelectionStrategy( long seed ) {
         rnd = new Random(seed);
-        System.out.println("SimpleEventSelectionStrategy: Using seed " + seed);
+        this.seed = seed;
     }
     
     public SimpleEventSelectionStrategy() {
@@ -32,9 +33,8 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     }
     
     @Override
-    public EventSelectionResult select(BProgramSyncSnapshot state) {
+    public EventSelectionResult select(Set<BSyncStatement> statements, List<BEvent> externalEvents ) {
         
-        List<BSyncStatement> statements = state.getStatements();
         EventSet blocked = ComposableEventSet.anyOf(statements.stream()
                 .filter( stmt -> stmt!=null )
                 .map(BSyncStatement::getBlock )
@@ -42,7 +42,7 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .collect( Collectors.toSet() ) );
         
         // Corner case, not sure this is even possible.
-        if ( statements.isEmpty() ) return selectExternal(state.getExternalEvents(), blocked, EventSelectionResult.NONE_REQUESTED);
+        if ( statements.isEmpty() ) return selectExternal(externalEvents, blocked, EventSelectionResult.NONE_REQUESTED);
         
         Set<BEvent> requested = statements.stream()
                 .filter( stmt -> stmt!=null )
@@ -50,7 +50,7 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .collect( Collectors.toSet() );
         
         // No internal events requested, defer to externals.
-        if ( requested.isEmpty() ) return selectExternal(state.getExternalEvents(), blocked, EventSelectionResult.NONE_REQUESTED);
+        if ( requested.isEmpty() ) return selectExternal(externalEvents, blocked, EventSelectionResult.NONE_REQUESTED);
         
         // Let's see what internal events are requested and not blocked (if any).
         List<BEvent> requestedAndNotBlocked = requested.stream()
@@ -58,7 +58,7 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .collect( Collectors.toList() );
         
         return requestedAndNotBlocked.isEmpty() ?
-                selectExternal(state.getExternalEvents(), blocked, EventSelectionResult.DEADLOCK)
+                selectExternal(externalEvents, blocked, EventSelectionResult.DEADLOCK)
                 : EventSelectionResult.selected( requestedAndNotBlocked.get( rnd.nextInt(requestedAndNotBlocked.size())) );
     }
     
@@ -76,5 +76,9 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
         }
         
         return EventSelectionResult.DEADLOCK;
+    }
+    
+    public long getSeed() {
+        return seed;
     }
 }

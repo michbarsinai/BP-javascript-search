@@ -8,6 +8,9 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
+### 2016-12-05
+* :put_litter_in_its_place: :sparkles: :elephant: Big refactoring and clean-up towards enabling search. `BThread`s removed from engine - main new concept is that an execution of a BThread is a series of `BThreadSyncSnapshot`, advanced/connected by `BPEngineTask`s. A BProgram is an execution environment for multiple BThreads (plus some state and management code).
+
 ### 2016-09-18
 * :bug: `breakUpon` handlers are evaluated in the `BThread`'s context, rather than in the `BProgram` one.
 

@@ -1,9 +1,7 @@
 package bp.bprogram.runtimeengine;
 
-import bp.events.BEvent;
 import org.mozilla.javascript.*;
 
-import java.io.InputStream;
 import java.io.Serializable;
 
 import bp.bprogram.runtimeengine.jsproxy.BThreadJsProxy;
@@ -17,39 +15,52 @@ import java.util.Optional;
  */
 public class BThreadSyncSnapshot implements Serializable {
 
+    /** Name of the BThread described */
+    private String name;
+
     /**
-     * The Javascript function that will be called when {@code this} BThread
-     * runs.
+     * The Javascript function that will be called when {@code this} BThread runs.
      */
     private Function entryPoint;
 
-    private String name;
-    private Scriptable scope;
-    private ContinuationPending continuation;
-
-    private BSyncStatement bSyncStatement;
-    private boolean alive = true;
-    private Context globalContext; // TODO needed?
-    private final BThreadJsProxy proxy = new BThreadJsProxy(this);
-    
     /**
      * BThreads may specify a function that runs when they are removed because
      * of a {@code breakUpon} statement.
      */
     private Optional<Function> breakUponHandler = Optional.empty();
+    
+    /** Proxy to {@code this}, used from the Javascript code.*/
+    private final BThreadJsProxy proxy = new BThreadJsProxy(this);
 
+    /** Scope for the Javascript code execution. */
+    private Scriptable scope;
+
+    /** Continuation of the code. */
+    private ContinuationPending continuation;
+    
+    /** BSync statement of the BThread at the time of the snapshot. */
+    private BSyncStatement bSyncStatement;
+    
     public BThreadSyncSnapshot(String aName, Function anEntryPoint) {
         name = aName;
         entryPoint = anEntryPoint;
     }
 
+    /**
+     * Convenience constructor with default parameters.
+     */
     public BThreadSyncSnapshot() {
         this(BThreadSyncSnapshot.class.getName(), null);
     }
     
+    /**
+     * Creates the next snapshot of the BThread in a given run. 
+     * @param aContinuation The BThread's continuation for the next sync.
+     * @param aStatement The BThread's statement for the next sync.
+     * @return a copy of {@code this} with updated continuation and statement.
+     */
     public BThreadSyncSnapshot copyWith( ContinuationPending aContinuation, BSyncStatement aStatement ) {
         BThreadSyncSnapshot retVal = new BThreadSyncSnapshot(name, entryPoint);
-        retVal.globalContext = globalContext; // TODO needed?
         retVal.continuation = aContinuation;
         retVal.setBreakUponHandler(getBreakUponHandler());
         retVal.setupScope(scope.getParentScope());
@@ -60,7 +71,7 @@ public class BThreadSyncSnapshot implements Serializable {
         return retVal;
     }
     
-    public void setupScope(Scriptable programScope) {
+    void setupScope(Scriptable programScope) {
         scope = (Scriptable) Context.javaToJS(proxy, programScope);
         scope.setPrototype(programScope);
 
@@ -72,33 +83,17 @@ public class BThreadSyncSnapshot implements Serializable {
         entryPoint.setParentScope(scope);
     }
 
+    /**
+     * Called from the Javascript code (via the proxy) when the client code wants to bsync.
+     * @param aStatement 
+     */
     public void bsync( BSyncStatement aStatement ) {
-        if ( !isAlive() ) { // TODO: this might be redaundant now that we delete bsync from the scope of breakupon handlers.
-            throw new IllegalStateException("Removed BThread cannot call bsync. Consider using enqueueExternalEvent.");
-        }
         bSyncStatement = aStatement.setBthread(this);
-        openGlobalContext(); // TODO try without the global context field, openingna dn clsing it. Might be already delt with at the BPTask level.
-        ContinuationPending capturedContinuation = globalContext.captureContinuation();
-        closeGlobalContext();
+        ContinuationPending capturedContinuation = Context.getCurrentContext().captureContinuation();
         capturedContinuation.setApplicationState(aStatement);
         throw capturedContinuation;
     }
     
-    private void openGlobalContext() {
-        globalContext = ContextFactory.getGlobal().enterContext();
-        globalContext.setOptimizationLevel(-1); // must use interpreter mode
-    }
-    
-    private void closeGlobalContext() {
-        Context.exit();
-    }
-
-    public void enterZombieMode() {
-        bSyncStatement = null;
-        continuation = null;
-        alive = false;
-    }
-
     public BSyncStatement getBSyncStatement() {
         return bSyncStatement;
     }
@@ -108,10 +103,6 @@ public class BThreadSyncSnapshot implements Serializable {
         if ( bSyncStatement.getBthread() != this ) {
             bSyncStatement.setBthread(this);
         }
-    }
-
-    public boolean isAlive() {
-        return alive;
     }
 
     public ContinuationPending getContinuation() {
@@ -133,10 +124,6 @@ public class BThreadSyncSnapshot implements Serializable {
     @Override
     public String toString() {
         return "[BThread: " + name + "]";
-    }
-
-    public void setAlive(boolean b) {
-        this.alive = b;
     }
 
     public Optional<Function> getBreakUponHandler() {

@@ -2,8 +2,6 @@ package bp.bprogram.runtimeengine.tasks;
 
 import bp.bprogram.runtimeengine.BProgram;
 import java.util.concurrent.Callable;
-
-import static bp.BProgramControls.debugMode;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import java.util.Optional;
 import org.mozilla.javascript.Context;
@@ -34,11 +32,6 @@ public abstract class BPEngineTask implements Callable<Optional<BThreadSyncSnaps
     
     protected abstract Optional<BThreadSyncSnapshot> run(Context jsContext);
 
-    public void bplog(String string) {
-        if (debugMode)
-            System.out.println("[" + this + "]: " + string);
-    }
-    
     private void openGlobalContext() {
         jsContext = ContextFactory.getGlobal().enterContext();
         jsContext.setOptimizationLevel(-1); // must use interpreter mode

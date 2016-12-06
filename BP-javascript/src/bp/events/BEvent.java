@@ -1,7 +1,6 @@
 
 package bp.events;
 
-import static bp.BProgramControls.debugMode;
 import bp.eventsets.EventSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -132,12 +131,6 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
     @Override
     public int compareTo(BEvent e) {
         return name.compareTo(e.getName());
-    }
-
-    protected void bplog(String string) {
-        if (debugMode) {
-            System.out.println(this + ": " + string);
-        }
     }
 
     @Override

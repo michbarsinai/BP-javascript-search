@@ -22,13 +22,13 @@ public class ResumeBThread extends BPEngineTask {
     @Override
     protected Optional<BThreadSyncSnapshot> run(Context jsContext) {
         try {
-            Object toResume = bss.getContinuation().getContinuation();
+            Object toResume = bss.getContinuation();
             Object eventInJS = Context.javaToJS(event, bss.getScope());
             jsContext.resumeContinuation(toResume, bss.getScope(), eventInJS); // may throw CapturedBSync
             return Optional.empty();
             
         } catch (ContinuationPending cbs) {  
-            return Optional.of( bss.copyWith(cbs, (BSyncStatement) cbs.getApplicationState()));
+            return Optional.of( bss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState()));
         } 
     }
 

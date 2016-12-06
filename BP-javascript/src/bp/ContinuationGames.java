@@ -40,10 +40,9 @@ public class ContinuationGames {
 
         @Override
         public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
-            ScriptableOutputStream outs = null;
             try {
                 BThreadSyncSnapshot bt = bthreads.iterator().next();
-                ContinuationPending cnt = bt.getContinuation();
+                Object cnt = bt.getContinuation();
 //                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 Context.enter();
 //                outs = new ScriptableOutputStream(bytes, bt.getScope());
@@ -56,9 +55,8 @@ public class ContinuationGames {
 
                 Context globalContext = ContextFactory.getGlobal().enterContext();
                 globalContext.setOptimizationLevel(-1); // must use interpreter mode
-                Object contiObject = cnt.getContinuation();
                 for (int i = 0; i < 10; i++) {
-                    globalContext.resumeContinuation(contiObject, globalScope, "");
+                    globalContext.resumeContinuation(cnt, globalScope, "");
                 }
                 Context.exit();
 

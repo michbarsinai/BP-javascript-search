@@ -15,7 +15,6 @@ import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
-import bp.eventsets.Events;
 import static bp.eventsets.Events.all;
 import static bp.eventsets.Events.emptySet;
 import java.io.BufferedReader;

@@ -23,7 +23,7 @@ public class StartBThread extends BPEngineTask {
             return Optional.empty();
 
         } catch (ContinuationPending cbs) {
-            return Optional.of( bthreadBss.copyWith(cbs, (BSyncStatement) cbs.getApplicationState()));
+            return Optional.of( bthreadBss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState()));
         }
     }
    

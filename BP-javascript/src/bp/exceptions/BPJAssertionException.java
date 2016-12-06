@@ -13,7 +13,6 @@ public class BPJAssertionException extends BPJException{
 
 	public BPJAssertionException(Throwable cause) {
 		super(cause);
-		// TODO Auto-generated constructor stub
 	}
 
 }

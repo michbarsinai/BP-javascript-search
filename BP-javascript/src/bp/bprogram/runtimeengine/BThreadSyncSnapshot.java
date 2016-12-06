@@ -36,7 +36,7 @@ public class BThreadSyncSnapshot implements Serializable {
     private Scriptable scope;
 
     /** Continuation of the code. */
-    private ContinuationPending continuation;
+    private Object continuation;
     
     /** BSync statement of the BThread at the time of the snapshot. */
     private BSyncStatement bSyncStatement;
@@ -59,7 +59,7 @@ public class BThreadSyncSnapshot implements Serializable {
      * @param aStatement The BThread's statement for the next sync.
      * @return a copy of {@code this} with updated continuation and statement.
      */
-    public BThreadSyncSnapshot copyWith( ContinuationPending aContinuation, BSyncStatement aStatement ) {
+    public BThreadSyncSnapshot copyWith( Object aContinuation, BSyncStatement aStatement ) {
         BThreadSyncSnapshot retVal = new BThreadSyncSnapshot(name, entryPoint);
         retVal.continuation = aContinuation;
         retVal.setBreakUponHandler(getBreakUponHandler());
@@ -105,12 +105,8 @@ public class BThreadSyncSnapshot implements Serializable {
         }
     }
 
-    public ContinuationPending getContinuation() {
+    public Object getContinuation() {
         return continuation;
-    }
-
-    public void setContinuation(ContinuationPending cont) {
-        continuation = cont;
     }
 
     public String getName() {

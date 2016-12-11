@@ -53,7 +53,7 @@ public class BThreadJsProxy implements java.io.Serializable {
         
         stmt = stmt.waitFor( convertToEventSet(jRWB.get("waitFor")) )
                    .block( convertToEventSet(jRWB.get("block")) )
-                   .breakUpon(convertToEventSet(jRWB.get("breakUpon")) );
+                   .interrupt(convertToEventSet(jRWB.get("interrupt")) );
         
         bthread.bsync( stmt );
         
@@ -117,8 +117,8 @@ public class BThreadJsProxy implements java.io.Serializable {
     }
     
     
-    public void setBreakUponHandler( Object aPossibleHandler ) {
-        bthread.setBreakUponHandler(
+    public void setInterruptHandler( Object aPossibleHandler ) {
+        bthread.setInterruptHandler(
                 (aPossibleHandler instanceof Function) 
                     ? Optional.of((Function) aPossibleHandler)
                     : Optional.empty() );

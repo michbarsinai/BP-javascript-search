@@ -37,7 +37,7 @@ public class BSyncStatement {
     /**
      * If any of these events happen, the stating thread wants to be terminated.
      */
-    private final EventSet breakUpon;    
+    private final EventSet interrupt;    
     
     private BThreadSyncSnapshot bthread;
     
@@ -47,7 +47,7 @@ public class BSyncStatement {
      * <code>
      * RWBStatement myStatement = make().request( XX ).waitFor( YY ).block( ZZZ );
      * </code>
-     * @param creator the {@link BThreadSyncSnapshot} that created this statument.
+     * @param creator the {@link BThreadSyncSnapshot} that created this statement.
      * @return an empty statement
      */
     public static BSyncStatement make(BThreadSyncSnapshot creator) {
@@ -61,7 +61,7 @@ public class BSyncStatement {
         this.request = new HashSet<>(request);
         this.waitFor = waitFor;
         this.block = block;
-        this.breakUpon = except;
+        this.interrupt = except;
     }
 
     public BSyncStatement(Collection<? extends BEvent> request, EventSet waitFor, EventSet block) {
@@ -79,26 +79,26 @@ public class BSyncStatement {
      * @return a new statement
      */
     public BSyncStatement request( Collection<? extends BEvent> toRequest ) {
-        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
+        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getInterrupt());
     }
     public BSyncStatement request( BEvent requestedEvent ) {
         Set<BEvent> toRequest = new HashSet<>();
         toRequest.add(requestedEvent);
-        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getBreakUpon());
+        return new BSyncStatement(toRequest, getWaitFor(), getBlock(), getInterrupt());
     }
     public BSyncStatement request( ExplicitEventSet ees ) {
-        return new BSyncStatement(ees.getCollection(), getWaitFor(), getBlock(), getBreakUpon());
+        return new BSyncStatement(ees.getCollection(), getWaitFor(), getBlock(), getInterrupt());
     }
     
     public BSyncStatement waitFor( EventSet events ) {
-        return new BSyncStatement(getRequest(), events, getBlock(), getBreakUpon());
+        return new BSyncStatement(getRequest(), events, getBlock(), getInterrupt());
     }
 
     public BSyncStatement block( EventSet events ) {
-        return new BSyncStatement(getRequest(), getWaitFor(), events, getBreakUpon());
+        return new BSyncStatement(getRequest(), getWaitFor(), events, getInterrupt());
     }
     
-    public BSyncStatement breakUpon( EventSet events ) {
+    public BSyncStatement interrupt( EventSet events ) {
         return new BSyncStatement(getRequest(), getWaitFor(), getBlock(), events);
     }
     
@@ -114,8 +114,8 @@ public class BSyncStatement {
         return block;
     }
 
-    public EventSet getBreakUpon() {
-        return breakUpon;
+    public EventSet getInterrupt() {
+        return interrupt;
     }
 
     public BThreadSyncSnapshot getBthread() {
@@ -129,7 +129,7 @@ public class BSyncStatement {
     
     @Override
     public String toString() {
-        return String.format("[RWBStatement r:%s w:%s b:%s x:%s]", getRequest(), getWaitFor(), getBlock(), getBreakUpon());
+        return String.format("[RWBStatement r:%s w:%s b:%s i:%s]", getRequest(), getWaitFor(), getBlock(), getInterrupt());
     }
 
     @Override
@@ -160,7 +160,7 @@ public class BSyncStatement {
         if (!Objects.equals(this.getBlock(), other.getBlock())) {
             return false;
         }
-        return Objects.equals(this.getBreakUpon(), other.getBreakUpon());
+        return Objects.equals(this.getInterrupt(), other.getInterrupt());
     }
 
 }

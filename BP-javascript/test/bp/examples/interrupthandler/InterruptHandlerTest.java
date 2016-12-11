@@ -1,4 +1,4 @@
-package bp.examples.breakuponhandler;
+package bp.examples.interrupthandler;
 
 import bp.events.BEvent;
 import bp.bprogram.runtimeengine.BProgram;
@@ -14,7 +14,7 @@ import org.mozilla.javascript.Scriptable;
 /**
  * @author @michbarsinai
  */
-public class BreakUponHandlerTest {
+public class InterruptHandlerTest {
 
     BProgram buildProgram(String jsFilename) {
         return new BProgram(jsFilename) {
@@ -27,7 +27,7 @@ public class BreakUponHandlerTest {
     
     @Test
     public void echoEventTest() throws InterruptedException {
-        BProgram sut = buildProgram("BreakUponHandler");
+        BProgram sut = buildProgram("InterruptHandler");
         sut.addListener( new StreamLoggerListener() );
         InMemoryEventLoggingListener eventLogger = sut.addListener( new InMemoryEventLoggingListener() );
         
@@ -44,7 +44,7 @@ public class BreakUponHandlerTest {
     
     @Test(expected=BProgramException.class)
     public void illegalBsyncTest() throws InterruptedException {
-        BProgram sut = buildProgram("BreakUponHandler_illegal");
+        BProgram sut = buildProgram("InterruptHandler_illegal");
         sut.addListener( new StreamLoggerListener() );
         
         sut.start();

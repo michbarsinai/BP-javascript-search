@@ -1,4 +1,4 @@
-package bp.examples.breakupon;
+package bp.examples.interrupt;
 
 import bp.events.BEvent;
 import bp.bprogram.runtimeengine.BProgram;
@@ -13,13 +13,13 @@ import org.mozilla.javascript.Scriptable;
  * @author orelmosheweinstock
  * @author @michbarsinai
  */
-public class BreakUponTest {
+public class InterruptTest {
 
     BProgram buildProgram() {
-        return new BProgram("BreakUpon") {
+        return new BProgram("Interrupt") {
             @Override
             protected void setupProgramScope( Scriptable aScope ) {
-                loadJavascriptResource("BreakUpon.js");
+                loadJavascriptResource("Interrupt.js");
             }
         };
     }

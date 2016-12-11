@@ -13,13 +13,13 @@ bpjs.registerBThread("requestor", function () {
     bsync( {request:breakingEvent} );
 });
 
-bpjs.registerBThread("BreakOnFirst", function () {
-  bsync({breakUpon:breakingEvent});
+bpjs.registerBThread("InterruptOnFirst", function () {
+  bsync({interrupt:breakingEvent});
   bsync({request:forbiddenEvent});
 });
 
-bpjs.registerBThread("BreakOnSecond", function () {
+bpjs.registerBThread("InterruptOnSecond", function () {
   bsync({waitFor:breakingEvent});
-  bsync({breakUpon:breakingEvent});
+  bsync({interrupt:breakingEvent});
   bsync({request:forbiddenEvent} );
 });

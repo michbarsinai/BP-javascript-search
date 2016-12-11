@@ -217,7 +217,7 @@ public abstract class BProgram {
         });
 
         Set<BThreadSyncSnapshot> brokenUpon = bthreads.stream()
-                .filter(bt -> bt.getBSyncStatement().getBreakUpon().contains(selectedEvent))
+                .filter(bt -> bt.getBSyncStatement().getInterrupt().contains(selectedEvent))
                 .collect(toSet());
 
         // Handle breakUpons
@@ -225,7 +225,7 @@ public abstract class BProgram {
             bthreads.removeAll(brokenUpon);
             brokenUpon.forEach(bt -> {
                 listeners.forEach(l -> l.bthreadRemoved(this, bt));
-                bt.getBreakUponHandler()
+                bt.getInterrupt()
                       .ifPresent( func -> {
                           final Scriptable scope = bt.getScope();
                           scope.delete("bsync"); // can't call bsync from a break handler.

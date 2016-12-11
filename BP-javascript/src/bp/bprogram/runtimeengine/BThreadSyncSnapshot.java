@@ -27,7 +27,7 @@ public class BThreadSyncSnapshot implements Serializable {
      * BThreads may specify a function that runs when they are removed because
      * of a {@code breakUpon} statement.
      */
-    private Optional<Function> breakUponHandler = Optional.empty();
+    private Optional<Function> interruptHandler = Optional.empty();
     
     /** Proxy to {@code this}, used from the Javascript code.*/
     private final BThreadJsProxy proxy = new BThreadJsProxy(this);
@@ -62,7 +62,7 @@ public class BThreadSyncSnapshot implements Serializable {
     public BThreadSyncSnapshot copyWith( Object aContinuation, BSyncStatement aStatement ) {
         BThreadSyncSnapshot retVal = new BThreadSyncSnapshot(name, entryPoint);
         retVal.continuation = aContinuation;
-        retVal.setBreakUponHandler(getBreakUponHandler());
+        retVal.setInterruptHandler(getInterrupt());
         retVal.setupScope(scope.getParentScope());
 
         retVal.bSyncStatement = aStatement;
@@ -122,16 +122,16 @@ public class BThreadSyncSnapshot implements Serializable {
         return "[BThread: " + name + "]";
     }
 
-    public Optional<Function> getBreakUponHandler() {
-        return breakUponHandler;
+    public Optional<Function> getInterrupt() {
+        return interruptHandler;
     }
 
-    public void setBreakUponHandler(Function aBreakUponHandler) {
-        setBreakUponHandler(Optional.ofNullable(aBreakUponHandler));
+    public void setInterruptHandler(Function anInterruptHandler) {
+        BThreadSyncSnapshot.this.setInterruptHandler(Optional.ofNullable(anInterruptHandler));
     }
     
-    public void setBreakUponHandler(Optional<Function> aBreakUponHandler) {
-        breakUponHandler = aBreakUponHandler;
+    public void setInterruptHandler(Optional<Function> anInterruptHandler) {
+        interruptHandler = anInterruptHandler;
     }
 
     public Scriptable getScope() {

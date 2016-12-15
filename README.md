@@ -8,6 +8,11 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
+### 2016-12-16
+* :sparkles: A class for running bpjs files.
+* :thumbsup: Efficient use of `Context`, so that we don't open and exit it all the time.
+* :put_litter_in_its_place: More removal of more unused code. We now have less unused code. Less is more, especially with unused code.
+
 ### 2016-12-11
 * :arrows_counterclockwise: `breakUpon` is now `interrupt`. This leaves `breakUpon` to be later used as a language construct rather than a `bsync` parameter.
 

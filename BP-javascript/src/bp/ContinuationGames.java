@@ -28,7 +28,7 @@ public class ContinuationGames {
 
         @Override
         protected void setupProgramScope(Scriptable scope) {
-            evaluateInGlobalContext(scope,
+            evaluateBpCode(scope,
                     "bp.registerBThread( \"bt\", function(){\n"
                     + "   bp.log.info(\"started\");"
                     + "   var i=1;"

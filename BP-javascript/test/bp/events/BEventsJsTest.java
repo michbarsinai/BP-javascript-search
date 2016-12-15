@@ -29,7 +29,7 @@ public class BEventsJsTest {
             protected void setupProgramScope(Scriptable aScope) {
                 aScope.put("events", aScope, Context.javaToJS(events, aScope));
                 
-                evaluateInGlobalContext(aScope,
+                evaluateBpCode(aScope,
                         "events.put('nameOnly1',       bpjs.Event('nameOnly'));\n"
                         + "events.put('nameOnly2',     bpjs.Event('nameOnly'));\n"
                         + "events.put('nameOnly-diff', bpjs.Event('nameOnly-diff'));\n"

@@ -57,7 +57,7 @@ public abstract class BProgram {
     private static final BEvent NO_MORE_DAEMON = new BEvent("NO_MORE_DAEMON");
     public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
 
-    public static Object evaluateInGlobalContext(Scriptable scope, InputStream ios, String scriptName) {
+    public static Object readAndEvaluateBpCode(Scriptable scope, InputStream ios, String scriptName) {
         InputStreamReader streamReader = new InputStreamReader(ios);
         BufferedReader br = new BufferedReader(streamReader);
         StringBuilder sb = new StringBuilder();
@@ -70,25 +70,28 @@ public abstract class BProgram {
             throw new RuntimeException("error while reading javascript from stream", e);
         }
         String script = sb.toString();
-        return evaluateInGlobalContext(scope, script, scriptName);
+        return evaluateBpCode(scope, script, scriptName);
     }
 
-    public static Object evaluateInGlobalContext(Scriptable scope, URI path) {
+    public static Object getAndEvaluateBpCode(Scriptable scope, URI path) {
         Path pathObject = get(path);
         try {
             String script = new String(readAllBytes(pathObject));
-            return evaluateInGlobalContext(scope, script, pathObject.toString());
+            return evaluateBpCode(scope, script, pathObject.toString());
         } catch (IOException e) {
             throw new RuntimeException("Error while evaluating in global context: " + e.getMessage(), e);
         }
     }
 
-    public static Object evaluateInGlobalContext(Scriptable scope, String script, String scriptName) {
-        Context cx = ContextFactory.getGlobal().enterContext();
-        cx.setOptimizationLevel(-1); // must use interpreter mode
-        final Object result = cx.evaluateString(scope, script, scriptName, 1, null);
-        Context.exit();
-        return result;
+    /**
+     * Runs the passed code in the passed scope.
+     * @param scope The scope to evaluate the script in. Has to contain BP-related values.
+     * @param script Code to evaluate
+     * @param scriptName For error reporting purposes.
+     * @return Result of code evaluation.
+     */
+    public static Object evaluateBpCode(Scriptable scope, String script, String scriptName) {
+        return Context.getCurrentContext().evaluateString(scope, script, scriptName, 1, null);
     }
 
     // ------------- Instance Members ---------------
@@ -278,11 +281,11 @@ public abstract class BProgram {
 
     
     public Object evaluateInGlobalScope(InputStream ios, String scriptname) {
-        return evaluateInGlobalContext(globalScope, ios, scriptname);
+        return readAndEvaluateBpCode(globalScope, ios, scriptname);
     }
 
     public Object evaluateInGlobalScope(URI path) {
-        return evaluateInGlobalContext(globalScope, path);
+        return getAndEvaluateBpCode(globalScope, path);
     }
 
     public Object evaluateInGlobalScope(String path, String scriptname) {
@@ -391,8 +394,14 @@ public abstract class BProgram {
      * Sets up internal data structures for running.
      */
     protected void setup() {
-        setupGlobalScope();
-        setupBThreadScopes();
+        try {
+            Context cx = ContextFactory.getGlobal().enterContext();
+            cx.setOptimizationLevel(-1); // must use interpreter mode
+            setupGlobalScope(cx);
+            setupBThreadScopes();
+        } finally {
+            Context.exit();
+        }
     }
 
     protected void setupAddedBThread(BThreadSyncSnapshot bt) {
@@ -400,18 +409,10 @@ public abstract class BProgram {
     }
 
     protected void setupBThreadScopes() {
-        try {
-            Context cx = ContextFactory.getGlobal().enterContext();
-            cx.setOptimizationLevel(-1); // must use interpreter mode
-            bthreads.forEach(bt -> bt.setupScope(globalScope));
-        } finally {
-            Context.exit();
-        }
+        bthreads.forEach(bt -> bt.setupScope(globalScope));
     }
 
-    protected void setupGlobalScope() {
-        Context cx = ContextFactory.getGlobal().enterContext();
-        cx.setOptimizationLevel(-1); // must use interpreter mode
+    protected void setupGlobalScope(Context cx) {
         try (InputStream script = BProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
             globalScope = cx.initStandardObjects(importer);
@@ -433,8 +434,6 @@ public abstract class BProgram {
 
         } catch (IOException ex) {
             throw new RuntimeException("Error while setting up global scope", ex);
-        } finally {
-            Context.exit();
         }
     }
 
@@ -488,9 +487,6 @@ public abstract class BProgram {
                 System.out.println("**** Got an excetpion " + ie);
                 System.out.println("**** Message " + ie.getMessage());
                 ie.printStackTrace(System.out);
-//                
-//                System.err.println("Error retrieving run result of a BThread: " + ie.getMessage() + " (" + ie.getClass().getCanonicalName() + ")");
-//                ie.printStackTrace(System.err);
                 return Optional.<BThreadSyncSnapshot>empty();
             }
         }).flatMap( 

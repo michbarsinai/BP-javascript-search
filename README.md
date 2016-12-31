@@ -8,6 +8,15 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
+### NEXT
+* :put_litter_in_its_place: Removed `bpjs` from JS scope. Programs must use `bp` now.
+* :put_litter_in_its_place: Polished the interface for adding BThreads to a program: 1 method instead of 3.
+* :bug: Fixed an issue where external events were re-ordered while checking for daemon mode termination.
+* :bug: A BProgram now quits when there are no more BThreads, even if there are enqueued external events.
+* :bug: Fixed typos in error messages.
+* :arrows_counterclockwise: Reduces method accessibility to minimum (nothing is `public` unless it has to be).
+* :sparkles: More documentation.
+
 ### 2016-12-16
 * :sparkles: A class for running bpjs files.
 * :thumbsup: Efficient use of `Context`, so that we don't open and exit it all the time.
@@ -35,7 +44,9 @@ This library was originally created my @moshewe, but was refactored extensively 
 * :sparkles: Restructured the engine with JS proxies - javascript code has no direct interaction with the Java engine parts!
 * :thumbsup: More unit tests and examples
 
-
+#### Engine/General
+* Restructured the engine with JS proxies - javascript code has no direct interaction with the Java engine parts!
+* More unit tests and examples
 
 ### 2016-06-11
 * :sparkles: BEvents now have an associated `data` object. See example [here](BP-javascript/test/bp/examples/eventswithdata/EventsWithData.js)

@@ -41,36 +41,7 @@ public class StreamLoggerListener implements BProgramListener {
 
     @Override
     public void superstepDone(BProgram bp, EventSelectionResult.EmptyResult emptyResult) {
-        out.println("---:" + bp.getName() + " SuperstepDone " + emptyResult.toString());
-        emptyResult.accept(new EmptyResult.VoidVisitor(){
-            @Override
-            protected void visitImpl(EventSelectionResult.SelectedExternal se) {}
-
-            @Override
-            protected void visitImpl(EventSelectionResult.Selected se) {}
-
-            @Override
-            protected void visitImpl(EventSelectionResult.Deadlock dl) {
-                // print the RBW statements
-                bp.currentStatements().forEach( rwbs -> {
-                    if ( rwbs == null ) {
-                        out.println("XX NULL RWBStatement");
-                    } else {
-                        if ( rwbs.getBthread() != null ) {
-                            out.println("* " + rwbs.getBthread().getName());
-                        } else {
-                            out.println("* @@unnamed");
-                        }
-                        out.println(" request: " + rwbs.getRequest() );
-                        out.println(" waitFor: " + rwbs.getWaitFor());
-                        out.println("   block: " + rwbs.getBlock());
-                    }
-                });
-            }
-
-            @Override
-            protected void visitImpl(EventSelectionResult.NoneRequested nr) {}
-        });
+        out.println("---:" + bp.getName() + " No Event Selected");
     }
 
     @Override

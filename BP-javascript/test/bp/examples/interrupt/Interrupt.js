@@ -1,24 +1,24 @@
-/* global bpjs, noEvents, emptySet  */
+/* global bp, noEvents, emptySet  */
 
 /*
  * In this test, we expect two "breaking event"s, and no forbidden ones.
  */
 
-var breakingEvent = bpjs.Event("breaking");
-var forbiddenEvent = bpjs.Event("forbidden");
+var breakingEvent = bp.Event("breaking");
+var forbiddenEvent = bp.Event("forbidden");
 
-bpjs.registerBThread("requestor", function () {
+bp.registerBThread("requestor", function () {
   // request hotEvent twice.
     bsync( {request:breakingEvent} );
     bsync( {request:breakingEvent} );
 });
 
-bpjs.registerBThread("InterruptOnFirst", function () {
+bp.registerBThread("InterruptOnFirst", function () {
   bsync({interrupt:breakingEvent});
   bsync({request:forbiddenEvent});
 });
 
-bpjs.registerBThread("InterruptOnSecond", function () {
+bp.registerBThread("InterruptOnSecond", function () {
   bsync({waitFor:breakingEvent});
   bsync({interrupt:breakingEvent});
   bsync({request:forbiddenEvent} );

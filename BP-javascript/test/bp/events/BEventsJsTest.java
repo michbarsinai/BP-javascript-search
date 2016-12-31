@@ -27,32 +27,31 @@ public class BEventsJsTest {
         prog = new BProgram() {
             @Override
             protected void setupProgramScope(Scriptable aScope) {
-                aScope.put("events", aScope, Context.javaToJS(events, aScope));
-                
+                aScope.put("events", aScope, Context.javaToJS(events, aScope));                
                 evaluateBpCode(aScope,
-                        "events.put('nameOnly1',       bpjs.Event('nameOnly'));\n"
-                        + "events.put('nameOnly2',     bpjs.Event('nameOnly'));\n"
-                        + "events.put('nameOnly-diff', bpjs.Event('nameOnly-diff'));\n"
-                        + "events.put('withData1',           bpjs.Event('withData',{a:'a',b:'b',c:700}));\n"
-                        + "events.put('withData2',           bpjs.Event('withData',{a:'a',b:'b',c:700}));\n"
-                        + "events.put('withData2-reordered', bpjs.Event('withData',{b:'b',a:'a',c:700}));\n"
-                        + "events.put('withData-diff1', bpjs.Event('withDataX',{a:'a',b:'b',c:700}));\n"
-                        + "events.put('withData-diff2', bpjs.Event('withData',{b:'b',c:700}));\n"
-                        + "events.put('withData-diff3', bpjs.Event('withData',{a:'a',b:'b',c:700,d:'x'}));\n"
-                        + "events.put('withData-diff4', bpjs.Event('withData',{a:'x',b:'b',c:700}));\n"
-                        + "events.put('withData-rec',   bpjs.Event('withData',{a:'x',b:'b',child:{a:2,b:'b'}}));\n"
-                        + "events.put('withData-rec2',  bpjs.Event('withData',{a:'x',b:'b',child:{a:2,b:'b'}}));\n"
-                        + "events.put('withPrimitiveData1',      bpjs.Event('withPrimitiveData',12));\n"
-                        + "events.put('withPrimitiveData2',      bpjs.Event('withPrimitiveData',12));\n"
-                        + "events.put('withPrimitiveData-diff1', bpjs.Event('withPrimitiveData',13));\n"
-                        + "events.put('withPrimitiveData-diff2', bpjs.Event('withPrimitiveData','string'));\n"
-                        + "events.put('withPrimitiveData-diff3', bpjs.Event('withPrimitiveData',{}));\n"
-                        + "events.put('withPrimitiveData-diff4', bpjs.Event('withPrimitiveData',function(p){return p;}));\n"
-                        + "events.put('e', bpjs.Event('e'));\n"
-                        + "events.put('m1d', bpjs.Event('metaE',bpjs.Event('e')));\n" 
-                        + "events.put('m2d', bpjs.Event('metaE',bpjs.Event('e')));\n" 
-                        + "events.put('m1i', bpjs.Event('metaE',{e:bpjs.Event('e'), v:'js-string'}));\n" 
-                        + "events.put('m2i', bpjs.Event('metaE',{e:bpjs.Event('e'), v:'js-string'}));"
+                          "events.put('nameOnly1',     bp.Event('nameOnly'));\n"
+                        + "events.put('nameOnly2',     bp.Event('nameOnly'));\n"
+                        + "events.put('nameOnly-diff', bp.Event('nameOnly-diff'));\n"
+                        + "events.put('withData1',           bp.Event('withData',{a:'a',b:'b',c:700}));\n"
+                        + "events.put('withData2',           bp.Event('withData',{a:'a',b:'b',c:700}));\n"
+                        + "events.put('withData2-reordered', bp.Event('withData',{b:'b',a:'a',c:700}));\n"
+                        + "events.put('withData-diff1', bp.Event('withDataX',{a:'a',b:'b',c:700}));\n"
+                        + "events.put('withData-diff2', bp.Event('withData',{b:'b',c:700}));\n"
+                        + "events.put('withData-diff3', bp.Event('withData',{a:'a',b:'b',c:700,d:'x'}));\n"
+                        + "events.put('withData-diff4', bp.Event('withData',{a:'x',b:'b',c:700}));\n"
+                        + "events.put('withData-rec',   bp.Event('withData',{a:'x',b:'b',child:{a:2,b:'b'}}));\n"
+                        + "events.put('withData-rec2',  bp.Event('withData',{a:'x',b:'b',child:{a:2,b:'b'}}));\n"
+                        + "events.put('withPrimitiveData1',      bp.Event('withPrimitiveData',12));\n"
+                        + "events.put('withPrimitiveData2',      bp.Event('withPrimitiveData',12));\n"
+                        + "events.put('withPrimitiveData-diff1', bp.Event('withPrimitiveData',13));\n"
+                        + "events.put('withPrimitiveData-diff2', bp.Event('withPrimitiveData','string'));\n"
+                        + "events.put('withPrimitiveData-diff3', bp.Event('withPrimitiveData',{}));\n"
+                        + "events.put('withPrimitiveData-diff4', bp.Event('withPrimitiveData',function(p){return p;}));\n"
+                        + "events.put('e', bp.Event('e'));\n"
+                        + "events.put('m1d', bp.Event('metaE',bp.Event('e')));\n" 
+                        + "events.put('m2d', bp.Event('metaE',bp.Event('e')));\n" 
+                        + "events.put('m1i', bp.Event('metaE',{e:bp.Event('e'), v:'js-string'}));\n" 
+                        + "events.put('m2i', bp.Event('metaE',{e:bp.Event('e'), v:'js-string'}));"
                         ,
                         "inline script" );
             }

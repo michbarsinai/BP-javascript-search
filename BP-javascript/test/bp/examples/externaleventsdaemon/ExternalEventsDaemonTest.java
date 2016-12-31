@@ -37,7 +37,6 @@ public class ExternalEventsDaemonTest {
                 for ( int i=0; i<4; i++ ) {
                     Thread.sleep(500);
                     sut.enqueueExternalEvent(new BEvent("ext1"));
-                    
                 }
             } catch (InterruptedException ex) {
                 Logger.getLogger(ExternalEventsDaemonTest.class.getName()).log(Level.SEVERE, null, ex);

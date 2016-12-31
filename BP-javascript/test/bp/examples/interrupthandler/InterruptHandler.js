@@ -1,4 +1,4 @@
-/* global bp */
+/* global bp, all */
 
 bp.registerBThread(function () {
     var testValue = "internalValue";
@@ -11,4 +11,6 @@ bp.registerBThread(function () {
 
 bp.registerBThread(function(){
    bsync({request:bp.Event("boom")});
+   bsync({waitFor:all});
+   bsync({waitFor:all});
 });

@@ -1,139 +1,81 @@
 package bp.eventselection;
 
 import bp.events.BEvent;
-import java.util.Objects;
+import java.util.Collections;
+import java.util.Set;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 /**
- * The result of trying to select an event. This is an algebraic datatype, 
- * with the possible result types as internal classes.
+ * The result of trying to select an event. There are two options here, hence the 
+ * algebraic data type design. Options are either an event is selected, or no
+ * event is selected. In the case of selected event, an {@link EventSelected}
+ * instance is returned. This instance contains the selected event an a list of indices
+ * to remove from the external event queue (typically because they contain instances
+ * equals to the selected event).
+ * 
+ * If no event is selected, the sole {@link EmptyResult} instance is returned.
  * 
  * @author michael
  */
 public abstract class EventSelectionResult {
     
     public static interface Visitor<R> {
-        R visit( SelectedExternal se );
-        R visit( Selected se );
-        R visit( Deadlock dl );
-        R visit( NoneRequested nr );
+        R visit( EventSelected se );
+        R visit( EmptyResult er );
     }
     
     public static abstract class VoidVisitor implements Visitor<Void> {
 
         @Override
-        public Void visit(SelectedExternal se) {
+        public Void visit(EventSelected se) {
             visitImpl(se);
             return null;
         }
 
         @Override
-        public Void visit(Selected se) {
-            visitImpl(se);
-            return null;
-        }
-
-        @Override
-        public Void visit(Deadlock dl) {
+        public Void visit(EmptyResult dl) {
             visitImpl(dl);
             return null;
         }
 
-        @Override
-        public Void visit(NoneRequested nr) {
-            visitImpl(nr);
-            return null;
-        }
-        
-        protected abstract void visitImpl( SelectedExternal se );
-        protected abstract void visitImpl( Selected se );
-        protected abstract void visitImpl( Deadlock dl );
-        protected abstract void visitImpl( NoneRequested nr );
+        protected abstract void visitImpl( EventSelected se );
+        protected abstract void visitImpl( EmptyResult dl );
     }
     
-    public static final Deadlock DEADLOCK = new Deadlock();
-    public static final NoneRequested NONE_REQUESTED = new NoneRequested();
-    public static Selected selected( BEvent evt ) {
-        return new Selected(evt);
-    }
-    public static SelectedExternal selectedExternal( BEvent evt, int idx ) {
-        return new SelectedExternal(evt, idx);
-    }
+    public static final EmptyResult EMPTY_RESULT = EmptyResult.INSTANCE;
     
     private EventSelectionResult(){
         // Prevent external subclassing.
     }
     
-    /**
-     * Base class for results that do not contain an event for some reason.
-     */
-    public abstract static class EmptyResult extends EventSelectionResult {
-        
-    }
-    
     public abstract <R> R accept( Visitor<R> v );
     
-    public static class Selected extends EventSelectionResult {
-        private final BEvent selectedEvent;
-
-        public Selected(BEvent selectedEvent) {
-            this.selectedEvent = selectedEvent;
-        }
-
-        public BEvent getEvent() {
-            return selectedEvent;
-        }
-        
-        @Override
-        public <R> R accept( Visitor<R> v ) {
-            return v.visit( this );
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 17 * hash + Objects.hashCode(this.selectedEvent);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Selected other = (Selected) obj;
-            return Objects.equals(this.selectedEvent, other.selectedEvent);
-        }
-        
-        @Override
-        public String toString(){
-            return "[Selected " + selectedEvent + "]";
-        }
-        
-    }
-    
     /**
-     * Selected and event form the external events queue. That event should be
-     * removed from the queue, hence the added index.
+     * A result where an event is selected. Contains the event itself, and a
+     * set of indices to remove from the external event queue. This set allows 
+     * the strategy to make the external event queue act like, e.g., a set of 
+     * events rather than a list.
      */
-    public static class SelectedExternal extends Selected {
+    public static class EventSelected extends EventSelectionResult {
         
-        private final int index;
+        private final BEvent selectedEvent;
+        private final Set<Integer> indicesToRemove;
         
-        public SelectedExternal(BEvent selectedEvent, int anIndex) {
-            super(selectedEvent);
-            index = anIndex;
+        public EventSelected(BEvent aSelectedEvent, Set<Integer> someIndices) {
+            selectedEvent = aSelectedEvent;
+            indicesToRemove = someIndices;
+            Set<Integer> negIndices = indicesToRemove.stream().filter( i -> i<0 ).collect( toSet() );
+            if ( !negIndices.isEmpty() ) {
+                throw new IllegalArgumentException("The following indices are illegal: " 
+                        + negIndices.stream().map(Object::toString).collect(joining(",")) );
+            }
+        }
+        
+        public EventSelected(BEvent anEvent) {
+            this(anEvent, Collections.emptySet());
         }
 
-        public int getIndex() {
-            return index;
-        }
-        
         @Override
         public <R> R accept( Visitor<R> v ) {
             return v.visit( this );
@@ -141,13 +83,21 @@ public abstract class EventSelectionResult {
         
         @Override
         public String toString() {
-            return "[SelectedExternal event:" + getEvent() + " index:" + getIndex() + "]";
+            return "[SelectedExternal event:" + getEvent() + " indices:" + getIndicesToRemove() + "]";
         }
 
+        public BEvent getEvent() {
+            return selectedEvent;
+        }
+
+        public Set<Integer> getIndicesToRemove() {
+            return indicesToRemove;
+        }
+        
         @Override
         public int hashCode() {
             int hash = 7;
-            hash = 23 * hash + this.index;
+            hash = 23 * hash + this.indicesToRemove.hashCode();
             return hash;
         }
 
@@ -162,21 +112,24 @@ public abstract class EventSelectionResult {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            final SelectedExternal other = (SelectedExternal) obj;
-            if (this.index != other.index) {
-                return false;
-            }
-            return super.equals(obj);
+            final EventSelected other = (EventSelected) obj;
+            return selectedEvent.equals(other.getEvent())
+                    && indicesToRemove.equals( other.getIndicesToRemove() );
         }
-        
-        
        
     }
     
     /**
-     * No event was selected since all requested events are blocked.
+     * Could not select an event.
      */
-    public static class Deadlock extends EmptyResult {
+    public static class EmptyResult extends EventSelectionResult {
+        
+        static final EmptyResult INSTANCE = new EmptyResult();
+        
+        private EmptyResult(){
+            // prevent instance creation outside of this class.
+        }
+        
         @Override
         public <R> R accept( Visitor<R> v ) {
             return v.visit( this );
@@ -184,24 +137,7 @@ public abstract class EventSelectionResult {
         
         @Override
         public String toString(){
-            return "[Deadlock]";
+            return "[EmptyResult]";
         }
     }
-    
-    
-    /**
-     * No events selected since no event was requested.
-     */
-    public static class NoneRequested extends EmptyResult {
-        @Override
-        public <R> R accept( Visitor<R> v ) {
-            return v.visit( this );
-        }
-        
-        @Override
-        public String toString(){
-            return "[NoneRequested]";
-        }
-    }
-    
 }

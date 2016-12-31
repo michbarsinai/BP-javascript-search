@@ -1,20 +1,29 @@
 package bp.eventselection;
 
-import bp.bprogram.runtimeengine.BProgramSyncSnapshot;
-import bp.events.BEvent;
 import bp.bprogram.runtimeengine.BSyncStatement;
+import bp.events.BEvent;
 import bp.eventsets.ComposableEventSet;
 import bp.eventsets.EventSet;
 import bp.eventsets.Events;
+import java.util.ArrayList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toSet;
 
 /**
- * An event selection strategy that randomly selects an event that's requested and not blocked.
- * If no internal event can be found, it attempts to select the first unblocked event from the external queue.
+ * An event selection strategy that:
+ * <ol>
+ * <li>Randomly selects an internal event that's requested and not blocked.<li>
+ * <li>If no such event is available, selects the first external event that's not blocked</li>
+ * <li>If no such event is available, returns {@link EventSelectionResult#EMPTY_RESULT}</li>
+ * </ol>
+ * 
+ * Under this strategy, if the selected event is internal, and has {@code equal} events queued externally,
+ * these events are not removed.
  * 
  * @author michael
  */
@@ -32,8 +41,13 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
         this( new Random().nextLong() );
     }
     
+    
     @Override
-    public EventSelectionResult select(Set<BSyncStatement> statements, List<BEvent> externalEvents ) {
+    public Set<BEvent> selectableEvents(Set<BSyncStatement> statements, List<BEvent> externalEvents) {
+        if ( statements.isEmpty() ) {
+            // Corner case, not sure this is even possible.
+            return externalEvents.isEmpty() ? emptySet() : singleton(externalEvents.get(0));
+        }
         
         EventSet blocked = ComposableEventSet.anyOf(statements.stream()
                 .filter( stmt -> stmt!=null )
@@ -41,41 +55,41 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .filter(r -> r != Events.emptySet )
                 .collect( Collectors.toSet() ) );
         
-        // Corner case, not sure this is even possible.
-        if ( statements.isEmpty() ) return selectExternal(externalEvents, blocked, EventSelectionResult.NONE_REQUESTED);
+        Set<BEvent> requested = statements.stream()
+                .filter( stmt -> stmt!=null )
+                .flatMap( stmt -> stmt.getRequest().stream() )
+                .collect( Collectors.toSet() );
+        
+        // Let's see what internal events are requested and not blocked (if any).
+        Set<BEvent> requestedAndNotBlocked = requested.stream()
+                .filter( req -> !blocked.contains(req) )
+                .collect( toSet() );
+        
+        return requestedAndNotBlocked.isEmpty() ?
+                externalEvents.stream().filter( e->!blocked.contains(e) ) // No internal events requested, defer to externals.
+                              .findFirst().map( e->singleton(e) ).orElse(emptySet())
+                : requestedAndNotBlocked;
+    }
+
+    @Override
+    public EventSelectionResult select(Set<BSyncStatement> statements, List<BEvent> externalEvents, Set<BEvent> selectableEvents) {
+        if ( selectableEvents.isEmpty() ) {
+            return EventSelectionResult.EMPTY_RESULT;
+        }
+        
+        BEvent chosen = new ArrayList<>(selectableEvents).get(rnd.nextInt(selectableEvents.size()));
         
         Set<BEvent> requested = statements.stream()
                 .filter( stmt -> stmt!=null )
                 .flatMap( stmt -> stmt.getRequest().stream() )
                 .collect( Collectors.toSet() );
         
-        // No internal events requested, defer to externals.
-        if ( requested.isEmpty() ) return selectExternal(externalEvents, blocked, EventSelectionResult.NONE_REQUESTED);
-        
-        // Let's see what internal events are requested and not blocked (if any).
-        List<BEvent> requestedAndNotBlocked = requested.stream()
-                .filter( req -> !blocked.contains(req) )
-                .collect( Collectors.toList() );
-        
-        return requestedAndNotBlocked.isEmpty() ?
-                selectExternal(externalEvents, blocked, EventSelectionResult.DEADLOCK)
-                : EventSelectionResult.selected( requestedAndNotBlocked.get( rnd.nextInt(requestedAndNotBlocked.size())) );
-    }
-    
-    private EventSelectionResult selectExternal( List<BEvent> externals, EventSet blocked, EventSelectionResult returnOnEmpty ) {
-        
-        if ( externals.isEmpty() ) {
-            return returnOnEmpty;
+        if (requested.contains(chosen)) {
+            return new EventSelectionResult.EventSelected(chosen);
+        } else {
+            // that was an internal event, need to find the first index 
+            return new EventSelectionResult.EventSelected(chosen, singleton(externalEvents.indexOf(chosen)));
         }
-        
-        for ( ListIterator<BEvent> it = externals.listIterator(); it.hasNext() ; ) {
-            BEvent candidate = it.next();
-            if ( ! blocked.contains(candidate) ) {
-                return EventSelectionResult.selectedExternal(candidate, it.previousIndex());
-            }
-        }
-        
-        return EventSelectionResult.DEADLOCK;
     }
     
     public long getSeed() {

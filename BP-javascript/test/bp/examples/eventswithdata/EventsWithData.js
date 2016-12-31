@@ -1,31 +1,31 @@
-/* global bpjs */
+/* global bp */
 
 /*
  * This BProgram uses the data field of events.
  */
 
-var visibleEvents = bpjs.EventSet( "visible", function(e) {
+var visibleEvents = bp.EventSet( "visible", function(e) {
     return e.data.eventType === "visible";
 });
-var hiddenEvents = bpjs.EventSet( "hidden", function(e) {
+var hiddenEvents = bp.EventSet( "hidden", function(e) {
     return e.data.eventType === "hidden";
 });
 
 // create and request a visible event.
-bpjs.registerBThread( "requestor", function(){
-   bsync({request: bpjs.Event("e1", {eventType:"visible", nextEventName:"e2"})});
+bp.registerBThread( "requestor", function(){
+   bsync({request: bp.Event("e1", {eventType:"visible", nextEventName:"e2"})});
 });
 
 // This BThread waits for the first visible event, then
 // requests an event based on the selected event.
-bpjs.registerBThread( "waitForVisible", function(){
+bp.registerBThread( "waitForVisible", function(){
     var e = bsync({waitFor:visibleEvents});
-    bsync({request:bpjs.Event(e.data.nextEventName, {eventType:"hidden"})});
+    bsync({request:bp.Event(e.data.nextEventName, {eventType:"hidden"})});
 });
 
 // Waits for a hidden event, and requests an event based on it.
-bpjs.registerBThread( "waitForHidden", function(){
+bp.registerBThread( "waitForHidden", function(){
     var ve = bsync({waitFor:visibleEvents});
     var he = bsync({waitFor:hiddenEvents});
-    bsync({request:bpjs.Event(ve.name + he.name)});
+    bsync({request:bp.Event(ve.name + he.name)});
 });

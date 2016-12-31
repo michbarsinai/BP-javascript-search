@@ -1,16 +1,16 @@
-/*  global bpjs */
+/*  global bp */
 
 // This script tests the JsEventSet class in the wild.
 // Assuming that Javascript is wild. It is.
 
-var firsts = bpjs.EventSet( "es1", function(e){
+var firsts = bp.EventSet( "es1", function(e){
     return e.getName().startsWith("1st");
 } );
 
-var firstEvent = bpjs.Event("1stEvent");
-var secondEvent = bpjs.Event("2ndEvent");
+var firstEvent = bp.Event("1stEvent");
+var secondEvent = bp.Event("2ndEvent");
 
-bpjs.registerBThread("first", function() {
+bp.registerBThread("first", function() {
     bsync({request:firstEvent});
 });
 
@@ -18,7 +18,7 @@ bpjs.registerBThread("first", function() {
  * This Bthread will wait for all events that fall into
  * {@code eventSet}, and then will request the second event.
  */
-bpjs.registerBThread("second", function() {
+bp.registerBThread("second", function() {
     bsync({waitFor:firsts});
     bsync({request:secondEvent});
 });

@@ -12,7 +12,6 @@ import java.util.concurrent.*;
 import bp.bprogram.runtimeengine.listeners.BProgramListener;
 import bp.eventselection.EventSelectionResult;
 import bp.eventselection.EventSelectionResult.EmptyResult;
-import bp.eventselection.EventSelectionResult.Selected;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
 import static bp.eventsets.Events.all;
@@ -35,6 +34,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
+import static java.util.Collections.reverseOrder;
 import java.util.stream.Stream;
 import org.mozilla.javascript.ContinuationPending;
 import org.mozilla.javascript.Function;
@@ -55,7 +55,7 @@ public abstract class BProgram {
      * daemon mode off.
      */
     private static final BEvent NO_MORE_DAEMON = new BEvent("NO_MORE_DAEMON");
-    public static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
+    private static final String GLOBAL_SCOPE_INIT = "BPJavascriptGlobalScopeInit";
 
     public static Object readAndEvaluateBpCode(Scriptable scope, InputStream ios, String scriptName) {
         InputStreamReader streamReader = new InputStreamReader(ios);
@@ -102,8 +102,8 @@ public abstract class BProgram {
      * its run() function finishes - or a Java thread adds itself and removes
      * itself explicitly
      */
-    public Set<BThreadSyncSnapshot> bthreads;
-    public Set<BThreadSyncSnapshot> nextRoundBthreads;
+    protected Set<BThreadSyncSnapshot> bthreads;
+    private Set<BThreadSyncSnapshot> nextRoundBthreads;
 
     private String name;
 
@@ -118,7 +118,7 @@ public abstract class BProgram {
     /**
      * Events are enqueued here by external threads
      */
-    private final BlockingQueue<BEvent> recentlyEnquqedExternalEvents = new LinkedBlockingQueue<>();
+    private final LinkedBlockingDeque<BEvent> recentlyEnquqedExternalEvents = new LinkedBlockingDeque<>();
 
     /**
      * At the BProgram's leisure, the external event are moved here, where they
@@ -186,13 +186,20 @@ public abstract class BProgram {
      * @throws InterruptedException
      * @return The reason the super-step terminated.
      */
-    public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
-
+    protected EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
         handler.endResult = null;
-        while (eventSelectionStrategy.select(currentStatements(), enqueuedExternalEvents).accept(handler)) {
-            recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
-            if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
-                daemonMode = false;
+        boolean go = true;
+        while (go) {
+            Set<BEvent> availableEvents = eventSelectionStrategy.selectableEvents(currentStatements(), enqueuedExternalEvents);
+            EventSelectionResult res = eventSelectionStrategy.select(currentStatements(), enqueuedExternalEvents, availableEvents);
+            go = res.accept(handler);
+            if ( bthreads.isEmpty() ) {
+                go = false; // no more BThreads left
+            } else {
+                recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
+                if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
+                    daemonMode = false;
+                }
             }
         }
         listeners.forEach(l -> l.superstepDone(this, handler.endResult));
@@ -207,7 +214,7 @@ public abstract class BProgram {
      * @param selectedEvent The event to trigger. Cannot be {@code null}.
      * @throws java.lang.InterruptedException
      */
-    public void triggerEvent( BEvent selectedEvent) throws InterruptedException {
+    protected void triggerEvent( BEvent selectedEvent) throws InterruptedException {
         if (selectedEvent == null) {
             throw new IllegalArgumentException("Cannot trigger a null event.");
         }
@@ -235,7 +242,7 @@ public abstract class BProgram {
                           try {
                             executeInScope(func, scope, new Object[]{selectedEvent});
                           } catch ( ContinuationPending ise ) {
-                              throw new BProgramException("Cannot call bsync from a break-upn handler. Consider pushing an external event");
+                              throw new BProgramException("Cannot call bsync from a break-upon handler. Consider pushing an external event.");
                           }
                       });
             });
@@ -254,9 +261,11 @@ public abstract class BProgram {
         addToNextRound(startRecentlyRegisteredBThreads());
         
         // carry over run results of BThreads that did not advance this round.
-        nextRoundBthreads.addAll( bthreads.stream()
+        nextRoundBthreads.addAll( 
+                bthreads.stream()
                 .filter(bt -> !(bt.getBSyncStatement().shouldWakeFor(selectedEvent)) )
-                .collect(toSet()) );
+                .collect(toSet()) 
+        );
     }
 
     private List<Future<Optional<BThreadSyncSnapshot>>> startRecentlyRegisteredBThreads() throws InterruptedException {
@@ -280,15 +289,15 @@ public abstract class BProgram {
     }
 
     
-    public Object evaluateInGlobalScope(InputStream ios, String scriptname) {
+    protected Object evaluateInGlobalScope(InputStream ios, String scriptname) {
         return readAndEvaluateBpCode(globalScope, ios, scriptname);
     }
 
-    public Object evaluateInGlobalScope(URI path) {
+    protected Object evaluateInGlobalScope(URI path) {
         return getAndEvaluateBpCode(globalScope, path);
     }
 
-    public Object evaluateInGlobalScope(String path, String scriptname) {
+    protected Object evaluateInGlobalScope(String path, String scriptname) {
         try (final InputStream ios = getClass().getResourceAsStream(path)) {
             return evaluateInGlobalScope(ios, scriptname);
         } catch (IOException iox) {
@@ -325,6 +334,16 @@ public abstract class BProgram {
         }
     }
     
+    /**
+     * Creates a snapshot of the program, which includes the status of its BThreads, 
+     * and the enqueued external events.
+     * 
+     * <strong>
+     * This method will produce unexpected results when called while the program
+     * is not in BSync.
+     * </strong>
+     * @return A snapshot of the program.
+     */
     public BProgramSyncSnapshot getSnapshot() {
         return new BProgramSyncSnapshot(bthreads, enqueuedExternalEvents);
     }
@@ -353,22 +372,14 @@ public abstract class BProgram {
      * @param bt
      */
     public void registerBThread(BThreadSyncSnapshot bt) {
+        listeners.forEach(l -> l.bthreadAdded(this, bt));
         if (started) {
             recentlyRegisteredBthreads.add(bt);
         } else {
-            add(bt);
+            bthreads.add(bt);
         }
     }
-
-    public void add(Collection<BThreadSyncSnapshot> bts) {
-        bts.forEach(bt -> add(bt));
-    }
-
-    public void add(BThreadSyncSnapshot bt) {
-        bthreads.add(bt);
-        listeners.forEach(l -> l.bthreadAdded(this, bt));
-    }
-
+    
     /**
      * Creates a list of the current {@link RWBStatements} of the current
      * BThreads. Note that the order in the list is arbitrary.
@@ -412,17 +423,14 @@ public abstract class BProgram {
         bthreads.forEach(bt -> bt.setupScope(globalScope));
     }
 
-    protected void setupGlobalScope(Context cx) {
+    private void setupGlobalScope(Context cx) {
         try (InputStream script = BProgram.class.getResourceAsStream("globalScopeInit.js");) {
             ImporterTopLevel importer = new ImporterTopLevel(cx);
             globalScope = cx.initStandardObjects(importer);
             
             BProgramJsProxy proxy = new BProgramJsProxy(this);
-            globalScope.put("bpjs", globalScope,
-                    Context.javaToJS(proxy, globalScope)); // for legacy code.
             globalScope.put("bp", globalScope,
-                    Context.javaToJS(proxy, globalScope)); // recommended use
-            
+                    Context.javaToJS(proxy, globalScope));
             globalScope.put("emptySet", globalScope,
                     Context.javaToJS(emptySet, globalScope));
             globalScope.put("all", globalScope,
@@ -457,12 +465,14 @@ public abstract class BProgram {
     protected abstract void setupProgramScope(Scriptable scope);
 
     private boolean waitForExternalEvent() throws InterruptedException {
-        final BEvent newEvent = recentlyEnquqedExternalEvents.take();
-        if (newEvent == NO_MORE_DAEMON) {
+        BEvent next = recentlyEnquqedExternalEvents.takeFirst();
+        
+        if (next == NO_MORE_DAEMON) {
             daemonMode = false;
             return false;
         } else {
-            enqueuedExternalEvents.add(newEvent);
+            // put the event back.
+            recentlyEnquqedExternalEvents.addFirst(next);
             return true;
         }
     }
@@ -480,18 +490,19 @@ public abstract class BProgram {
         if ( nextRoundBthreads == null ) {
             nextRoundBthreads = new HashSet<>(runResults.size());
         }
-        nextRoundBthreads.addAll( runResults.stream().map( f -> {
-            try {
-                return f.get();
-            } catch ( InterruptedException | ExecutionException ie ) {
-                System.out.println("**** Got an excetpion " + ie);
-                System.out.println("**** Message " + ie.getMessage());
-                ie.printStackTrace(System.out);
-                return Optional.<BThreadSyncSnapshot>empty();
-            }
-        }).flatMap( 
-                opt -> opt.map(bss -> Stream.of(bss)).orElse(Stream.empty()) )
-        .collect(toList()) );
+        nextRoundBthreads.addAll( 
+            runResults.stream().map( f -> {
+                try {
+                    return f.get();
+                } catch ( InterruptedException | ExecutionException ie ) {
+                    System.out.println("**** Got an excetpion " + ie);
+                    System.out.println("**** Message " + ie.getMessage());
+                    ie.printStackTrace(System.out);
+                    return Optional.<BThreadSyncSnapshot>empty();
+                }
+            }).flatMap(opt -> opt.map(bss -> Stream.of(bss)).orElse(Stream.empty())
+            ).collect(toList()) 
+        );
     }
 
     /**
@@ -502,35 +513,36 @@ public abstract class BProgram {
         nextRoundBthreads = null;
     }
 
-    public Set<BThreadSyncSnapshot> getBThreads() {
-        return bthreads;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     /**
-     * @return the given bprogram's _name
+     * Adds a listener to the BProgram.
+     * @param <R> Actual type of listener.
+     * @param aListener the listener to add.
+     * @return The added listener, to allow call chaining.
      */
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public <R extends BProgramListener> R addListener(R aListener) {
         listeners.add(aListener);
         return aListener;
     }
 
+    /**
+     * Removes the listener from the program. If the listener is not registered,
+     * this call is ignored. In other words, this call is idempotent.
+     * @param aListener the listener to remove.
+     */
     public void removeListener(BProgramListener aListener) {
         listeners.remove(aListener);
     }
 
+    /**
+     * Sets whether this program is a daemon or not. When daemon, program will
+     * wait for external events even when there are no selectable internal events. 
+     *
+     * In normal mode ({@code daemon==false}), when no events are available for 
+     * selection, the program terminates.
+     * 
+     * @param newDaemonMode {@code true} to make the program a daemon, 
+     *                      {@code false} otherwise.
+     */
     public void setDaemonMode(boolean newDaemonMode) {
         if (daemonMode && !newDaemonMode) {
             daemonMode = false;
@@ -543,11 +555,32 @@ public abstract class BProgram {
     public boolean isDaemonMode() {
         return daemonMode;
     }
-
+    
+    /**
+     * Returns the program's global scope.
+     * @return the global scope of the program.
+     */
     public Scriptable getGlobalScope() {
         return globalScope;
     }
 
+    public Set<BThreadSyncSnapshot> getBThreads() {
+        return bthreads;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+    
     /**
      * Visitor for handling possible decisions of an {@link EventSelectionStrategy} 
      * object.
@@ -557,9 +590,10 @@ public abstract class BProgram {
         EmptyResult endResult;
 
         @Override
-        public Boolean visit(EventSelectionResult.SelectedExternal se) {
+        public Boolean visit(EventSelectionResult.EventSelected se) {
             try {
-                enqueuedExternalEvents.remove(se.getIndex());
+                se.getIndicesToRemove().stream().sorted(reverseOrder())
+                        .forEach( idxObj -> enqueuedExternalEvents.remove(idxObj.intValue()) );
                 triggerEvent(se.getEvent());
                 finalizeRound();
                 return true;
@@ -569,28 +603,9 @@ public abstract class BProgram {
         }
 
         @Override
-        public Boolean visit(Selected se) {
-            try {
-                triggerEvent(se.getEvent());
-                finalizeRound();
-                return true;
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        @Override
-        public Boolean visit(EventSelectionResult.Deadlock dl) {
+        public Boolean visit(EventSelectionResult.EmptyResult dl) {
             endResult = dl;
             return false;
         }
-
-        @Override
-        public Boolean visit(EventSelectionResult.NoneRequested ne) {
-            endResult = ne;
-            return false;
-        }
-
     }
-    
 }

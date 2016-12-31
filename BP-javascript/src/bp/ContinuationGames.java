@@ -6,16 +6,11 @@ package bp;
 import bp.bprogram.runtimeengine.BProgram;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.eventselection.EventSelectionResult;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ContinuationPending;
 import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.serialize.ScriptableOutputStream;
 
 /**
  * Playing around with continuations.
@@ -63,7 +58,7 @@ public class ContinuationGames {
             } catch (Exception ex) {
                 Logger.getLogger(ContinuationGames.class.getName()).log(Level.SEVERE, null, ex);
             }
-            return EventSelectionResult.NONE_REQUESTED;
+            return EventSelectionResult.EMPTY_RESULT;
         }
 
     }

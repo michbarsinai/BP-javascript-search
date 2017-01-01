@@ -8,7 +8,7 @@ This library was originally created my @moshewe, but was refactored extensively 
 
 ## Change log for the BPjs library.
 
-### NEXT
+### 2017-01-01
 * :sparkles: Re-arranged code to minimize amount of `Context.enter`-`Context.exit` pairs (~x5 performance factor!)
 * :sparkles: Simplified mechanism for handling event selection in `BProgram`. Replaced a complex Visitor pattern with Java8's `Optional`.
 * :arrows_counterclockwise: Improved efficiency for external events handling.
@@ -16,6 +16,7 @@ This library was originally created my @moshewe, but was refactored extensively 
 * :sparkles: More documentation.
 * :sparkles: Better error messages.
 * :put_litter_in_its_place: Removed unused code from `BProgram`.
+* :put_litter_in_its_place: Removed non-serializable `Optional` from fields.
 
 
 ### 2016-12-31

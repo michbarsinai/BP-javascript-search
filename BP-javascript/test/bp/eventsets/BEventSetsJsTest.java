@@ -68,8 +68,10 @@ public class BEventSetsJsTest {
         BEvent eNotName = events.get("eNotName");
         EventSet esName = eventSets.get("esName");
         
+        Context.enter();
         assertTrue( esName.contains(eName) );
         assertFalse( esName.contains(eNotName) );
+        Context.exit();
     }
     
     @Test
@@ -81,7 +83,7 @@ public class BEventSetsJsTest {
         BEvent eName = events.get("eName");
         EventSet esDataVizIsViz = eventSets.get("esDataObjVizIsViz");
         EventSet esDataIsViz = eventSets.get("esDataIsViz");
-        
+        Context.enter();
         assertTrue( esDataVizIsViz.contains(eVizObj) );
         assertTrue( esDataIsViz.contains(eViz) );
         
@@ -89,7 +91,7 @@ public class BEventSetsJsTest {
         assertFalse( esDataVizIsViz.contains(eViz) );
         assertFalse( esDataVizIsViz.contains(eName) );
         assertFalse( esDataIsViz.contains(eName) );
-        
+        Context.exit();
     }
    
     

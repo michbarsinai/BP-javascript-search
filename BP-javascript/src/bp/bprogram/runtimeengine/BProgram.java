@@ -34,9 +34,7 @@ import org.mozilla.javascript.Scriptable;
 import static java.util.stream.Collectors.toSet;
 import static java.nio.file.Paths.get;
 import static java.util.Collections.reverseOrder;
-import java.util.stream.Stream;
 import org.mozilla.javascript.ContinuationPending;
-import org.mozilla.javascript.Function;
 import org.mozilla.javascript.WrappedException;
 
 /**
@@ -117,7 +115,7 @@ public abstract class BProgram {
     /**
      * Events are enqueued here by external threads
      */
-    private final LinkedBlockingDeque<BEvent> recentlyEnqueuedExternalEvents = new LinkedBlockingDeque<>();
+    private final BlockingQueue<BEvent> recentlyEnqueuedExternalEvents = new LinkedBlockingQueue<>();
 
     /**
      * At the BProgram's leisure, the external event are moved here, where they
@@ -236,7 +234,10 @@ public abstract class BProgram {
                 System.err.println("SEVERE: " + bt.getName() + " Has null stmt");
             }
         });
-
+        
+        // We are about to execute Javascript code ////////////////
+        Context ctxt = Context.enter();
+        
         Set<BThreadSyncSnapshot> brokenUpon = bthreads.stream()
                 .filter(bt -> bt.getBSyncStatement().getInterrupt().contains(selectedEvent))
                 .collect(toSet());
@@ -251,35 +252,39 @@ public abstract class BProgram {
                           final Scriptable scope = bt.getScope();
                           scope.delete("bsync"); // can't call bsync from a break handler.
                           try {
-                            executeInScope(func, scope, new Object[]{selectedEvent});
+                              ctxt.callFunctionWithContinuations(func, scope, new Object[]{selectedEvent});
                           } catch ( ContinuationPending ise ) {
                               throw new BProgramException("Cannot call bsync from a break-upon handler. Consider pushing an external event.");
                           }
                       });
             });
         }
-
-        // See who wakes up for the next thread.
-        Collection<ResumeBThread> resumes = bthreads.stream()
-                .filter(bt -> bt.getBSyncStatement().shouldWakeFor(selectedEvent))
-                .map(bt -> new ResumeBThread(bt, selectedEvent))
-                .collect(toList());
+        
+        
+        // See who wakes up for the selected event and how skips this round.
+        Set<BThreadSyncSnapshot> resumingThisRound = new HashSet<>(bthreads.size());
+        Set<BThreadSyncSnapshot> sleepingThisRound = new HashSet<>(bthreads.size());
+        bthreads.forEach( snapshot -> {
+            (snapshot.getBSyncStatement().shouldWakeFor(selectedEvent) ? resumingThisRound : sleepingThisRound).add(snapshot);
+        });
+        
+        Context.exit();
+        
+        // Javascript code done ///////////////////////////////////
         
         // add the run results of all those who advance this stage
-        addToNextRound(executor.invokeAll(resumes));
+        addToNextRound(executor.invokeAll(resumingThisRound.stream()
+                .map(bt -> new ResumeBThread(bt, selectedEvent))
+                .collect(toList())));
         
         // if any new bthreads are added, run and add them
         addToNextRound(startRecentlyRegisteredBThreads());
         
-        // carry over run results of BThreads that did not advance this round.
-        nextRoundBthreads.addAll( 
-                bthreads.stream()
-                .filter(bt -> !(bt.getBSyncStatement().shouldWakeFor(selectedEvent)) )
-                .collect(toSet()) 
-        );
+        // carry over BThreads that did not advance this round to next round.
+        nextRoundBthreads.addAll(sleepingThisRound);
     }
 
-    private List<Future<Optional<BThreadSyncSnapshot>>> startRecentlyRegisteredBThreads() throws InterruptedException {
+    private List<Future<BThreadSyncSnapshot>> startRecentlyRegisteredBThreads() throws InterruptedException {
         
         // Setup the new BThread's scopes.
         try {
@@ -291,8 +296,9 @@ public abstract class BProgram {
         }
 
         // run the new BThreads.
-        final List<Future<Optional<BThreadSyncSnapshot>>> result = executor.invokeAll(recentlyRegisteredBthreads.stream()
+        final List<Future<BThreadSyncSnapshot>> result = executor.invokeAll(recentlyRegisteredBthreads.stream()
                 .map(bt -> new StartBThread(bt))
+                .filter( Objects::nonNull )
                 .collect(toList()));
         recentlyRegisteredBthreads.clear();
         
@@ -357,23 +363,6 @@ public abstract class BProgram {
      */
     public BProgramSyncSnapshot getSnapshot() {
         return new BProgramSyncSnapshot(bthreads, enqueuedExternalEvents);
-    }
-    
-    /**
-     * makes the obj available in the java script code , under the given name
-     * "objName"
-     *
-     * @param objName
-     * @param obj
-     */
-    protected void putInGlobalScope(String objName, Object obj) {
-        Context cx = ContextFactory.getGlobal().enterContext();
-        cx.setOptimizationLevel(-1); // must use interpreter mode
-        try {
-            globalScope.put(objName, globalScope, Context.javaToJS(obj, globalScope));
-        } finally {
-            Context.exit();
-        }
     }
 
     /**
@@ -456,17 +445,6 @@ public abstract class BProgram {
         }
     }
 
-    protected void executeInGlobalScope( Function aFunction, Object[] args  ) {
-        executeInScope(aFunction, globalScope, args );
-    }
-    
-    protected void executeInScope( Function aFunction, Scriptable scope, Object[] args  ) {
-        Context globalContext = ContextFactory.getGlobal().enterContext();
-        globalContext.setOptimizationLevel(-1); // must use interpreter mode
-        globalContext.callFunctionWithContinuations(aFunction, scope, args);
-        Context.exit();
-    }
-    
     /**
      * The BProgram should set up its scope here (e.g. load the script for
      * BThreads). This method is called after {@link #setupGlobalScope()}.
@@ -476,14 +454,13 @@ public abstract class BProgram {
     protected abstract void setupProgramScope(Scriptable scope);
 
     private boolean waitForExternalEvent() throws InterruptedException {
-        BEvent next = recentlyEnqueuedExternalEvents.takeFirst();
+        BEvent next = recentlyEnqueuedExternalEvents.take();
         
         if (next == NO_MORE_DAEMON) {
             daemonMode = false;
             return false;
         } else {
-            // put the event back.
-            recentlyEnqueuedExternalEvents.addFirst(next);
+            enqueuedExternalEvents.add(next);
             return true;
         }
     }
@@ -497,7 +474,7 @@ public abstract class BProgram {
      *
      * @param runResults 
      */
-    private void addToNextRound( List<Future<Optional<BThreadSyncSnapshot>>> runResults ) {
+    private void addToNextRound( List<Future<BThreadSyncSnapshot>> runResults ) {
         if ( nextRoundBthreads == null ) {
             nextRoundBthreads = new HashSet<>(runResults.size());
         }
@@ -509,10 +486,10 @@ public abstract class BProgram {
                     System.out.println("**** Got an excetpion " + ie);
                     System.out.println("**** Message " + ie.getMessage());
                     ie.printStackTrace(System.out);
-                    return Optional.<BThreadSyncSnapshot>empty();
-                }
-            }).flatMap(opt -> opt.map(bss -> Stream.of(bss)).orElse(Stream.empty())
-            ).collect(toList()) 
+                    return null;
+                }})
+            .filter( Objects::nonNull )
+            .collect(toList())
         );
     }
 

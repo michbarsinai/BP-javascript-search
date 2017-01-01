@@ -7,7 +7,6 @@ import bp.bprogram.runtimeengine.BProgram;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.events.BEvent;
 import bp.eventsets.JsEventSet;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.javascript.Function;
 
@@ -64,7 +63,7 @@ public class BProgramJsProxy implements java.io.Serializable {
      * @return an event with the passed name.
      */
     public BEvent Event(String name, Object jsData) {
-        return new BEvent(name, Optional.ofNullable(jsData) );
+        return new BEvent(name, jsData );
     }
     
     public JsEventSet EventSet(String name, Function predicate) {

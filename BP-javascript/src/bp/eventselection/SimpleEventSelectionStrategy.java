@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
+import org.mozilla.javascript.Context;
 
 /**
  * An event selection strategy that:
@@ -62,14 +63,19 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .collect( Collectors.toSet() );
         
         // Let's see what internal events are requested and not blocked (if any).
-        Set<BEvent> requestedAndNotBlocked = requested.stream()
-                .filter( req -> !blocked.contains(req) )
-                .collect( toSet() );
-        
-        return requestedAndNotBlocked.isEmpty() ?
-                externalEvents.stream().filter( e->!blocked.contains(e) ) // No internal events requested, defer to externals.
-                              .findFirst().map( e->singleton(e) ).orElse(emptySet())
-                : requestedAndNotBlocked;
+        try {
+            Context.enter();
+            Set<BEvent> requestedAndNotBlocked = requested.stream()
+                    .filter( req -> !blocked.contains(req) )
+                    .collect( toSet() );
+
+            return requestedAndNotBlocked.isEmpty() ?
+                    externalEvents.stream().filter( e->!blocked.contains(e) ) // No internal events requested, defer to externals.
+                                  .findFirst().map( e->singleton(e) ).orElse(emptySet())
+                    : requestedAndNotBlocked;
+        } finally {
+            Context.exit();
+        }
     }
 
     @Override

@@ -33,17 +33,17 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
      * Extra data for the event. Public access, so that the Javascript code
      * feels natural.
      */
-    public final Optional<Object> maybeData;
+    public final Object maybeData;
 
     public static BEvent named(String aName) {
         return new BEvent(aName);
     }
 
     public BEvent(String aName) {
-        this(aName, Optional.empty());
+        this(aName, null);
     }
 
-    public BEvent(String aName, Optional<Object> someData) {
+    public BEvent(String aName, Object someData) {
         name = aName;
         maybeData = someData;
     }
@@ -54,7 +54,7 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
 
     @Override
     public String toString() {
-        return "[BEvent name:" + name + (maybeData.map(v -> " data:" + v).orElse("")) + "]";
+        return "[BEvent name:" + name + (getDataField().map(v -> " data:" + v).orElse("")) + "]";
     }
 
     public String getName() {
@@ -65,7 +65,7 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
      * @return The data field of the event.
      */
     public Optional<Object> getDataField() {
-        return maybeData;
+        return Optional.ofNullable(maybeData);
     }
     
     /**
@@ -76,7 +76,7 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
      * @see #getDataField() 
      */
     public Object getData() {
-        return maybeData.orElse(null);
+        return maybeData;
     }
 
     @Override
@@ -98,22 +98,21 @@ public class BEvent implements Comparable<BEvent>, EventSet, java.io.Serializabl
             return false;
         }
         
-        if ( maybeData.isPresent() ^ (other.getDataField().isPresent()) ) {
+        if ( (maybeData!=null) ^ (other.getDataField().isPresent()) ) {
             // one has data, the other does not.
             return false;
         }
 
-        if (maybeData.isPresent()) { // and, by above test, other also has data
+        if ( (maybeData!=null) ) { // and, by above test, other also has data
             // OK, delve into Javascript semantics.
-            Object ourData = maybeData.get();
             Object theirData = other.getDataField().get();
-            if (!(ourData.getClass().isAssignableFrom(theirData.getClass())
-                    || theirData.getClass().isAssignableFrom(ourData.getClass()))) {
+            if (!(maybeData.getClass().isAssignableFrom(theirData.getClass())
+                    || theirData.getClass().isAssignableFrom(maybeData.getClass()))) {
                 return false; // not same type of data.
             }
 
             // Evaluate datas.
-            return jsObjectsEqual(ourData, theirData);
+            return jsObjectsEqual(maybeData, theirData);
 
         } else {
             // whew - both don't have data

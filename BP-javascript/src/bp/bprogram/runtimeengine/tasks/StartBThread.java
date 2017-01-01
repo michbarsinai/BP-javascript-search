@@ -2,7 +2,6 @@ package bp.bprogram.runtimeengine.tasks;
 
 import bp.bprogram.runtimeengine.BSyncStatement;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
-import java.util.Optional;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContinuationPending;
 
@@ -17,13 +16,13 @@ public class StartBThread extends BPEngineTask {
     }
 
     @Override
-    protected Optional<BThreadSyncSnapshot> run(Context jsContext) {
+    protected BThreadSyncSnapshot run(Context jsContext) {
          try {
             jsContext.callFunctionWithContinuations(bthreadBss.getEntryPoint(), bthreadBss.getScope(), new Object[0]);
-            return Optional.empty();
+            return null;
 
         } catch (ContinuationPending cbs) {
-            return Optional.of( bthreadBss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState()));
+            return bthreadBss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState());
         }
     }
    

@@ -3,7 +3,6 @@ package bp.bprogram.runtimeengine.tasks;
 import bp.bprogram.runtimeengine.BSyncStatement;
 import bp.events.BEvent;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
-import java.util.Optional;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContinuationPending;
 
@@ -20,15 +19,15 @@ public class ResumeBThread extends BPEngineTask {
     }
 
     @Override
-    protected Optional<BThreadSyncSnapshot> run(Context jsContext) {
+    protected BThreadSyncSnapshot run(Context jsContext) {
         try {
             Object toResume = bss.getContinuation();
             Object eventInJS = Context.javaToJS(event, bss.getScope());
             jsContext.resumeContinuation(toResume, bss.getScope(), eventInJS); // may throw CapturedBSync
-            return Optional.empty();
+            return null;
             
         } catch (ContinuationPending cbs) {  
-            return Optional.of( bss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState()));
+            return bss.copyWith(cbs.getContinuation(), (BSyncStatement) cbs.getApplicationState());
         } 
     }
 

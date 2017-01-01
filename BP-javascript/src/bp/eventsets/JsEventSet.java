@@ -24,12 +24,12 @@ public class JsEventSet implements EventSet, java.io.Serializable {
     
     @Override
     public boolean contains(Object o) {
-        Context ctxt = Context.enter();
-        try {
-            ctxt.setOptimizationLevel(-1);
+//        Context ctxt = Context.enter();
+//        try {
+//            ctxt.setOptimizationLevel(-1);
             
             try {
-                Object result = predicate.call(ctxt, predicate, predicate.getParentScope(), 
+                Object result = predicate.call(Context.getCurrentContext(), predicate, predicate.getParentScope(), 
                                             new Object[]{Context.javaToJS(o, predicate.getParentScope())});
             
                 Boolean res = (Boolean)Context.jsToJava(result, Boolean.class);
@@ -44,9 +44,9 @@ public class JsEventSet implements EventSet, java.io.Serializable {
             }
             
             
-        } finally {
-            Context.exit();
-        }
+//        } finally {
+//            Context.exit();
+//        }
     }
 
     public Function getPredicate() {

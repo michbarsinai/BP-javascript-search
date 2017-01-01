@@ -17,7 +17,7 @@ import static bp.eventsets.Events.emptySet;
  * 
  * @author michael
  */
-public class BSyncStatement {
+public class BSyncStatement implements java.io.Serializable {
    
     /**
      * The event requested by this statement

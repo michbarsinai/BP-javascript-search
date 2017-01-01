@@ -3,7 +3,6 @@ package bp.bprogram.runtimeengine.tasks;
 import bp.bprogram.runtimeengine.BProgram;
 import java.util.concurrent.Callable;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
-import java.util.Optional;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 
@@ -16,12 +15,12 @@ import org.mozilla.javascript.ContextFactory;
  * @author moshewe
  * @author Michael
  */
-public abstract class BPEngineTask implements Callable<Optional<BThreadSyncSnapshot>>{
+public abstract class BPEngineTask implements Callable<BThreadSyncSnapshot>{
     
     private Context jsContext;
     
     @Override
-    public Optional<BThreadSyncSnapshot> call() throws Exception {
+    public BThreadSyncSnapshot call() throws Exception {
         try {
             openGlobalContext();
             return run(jsContext);
@@ -30,7 +29,7 @@ public abstract class BPEngineTask implements Callable<Optional<BThreadSyncSnaps
         }
     }
     
-    protected abstract Optional<BThreadSyncSnapshot> run(Context jsContext);
+    protected abstract BThreadSyncSnapshot run(Context jsContext);
 
     private void openGlobalContext() {
         jsContext = ContextFactory.getGlobal().enterContext();

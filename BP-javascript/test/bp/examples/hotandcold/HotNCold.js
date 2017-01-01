@@ -4,15 +4,15 @@ var coldEvent = bp.Event("coldEvent");
 var hotEvent = bp.Event("hotEvent");
 
 bp.registerBThread("HotBt", function() {
-    bsync(hotEvent, emptySet, emptySet);
-    bsync(hotEvent, emptySet, emptySet);
-    bsync(hotEvent, emptySet, emptySet);
+    bsync({request:hotEvent});
+    bsync({request:hotEvent});
+    bsync({request:hotEvent});
 });
 
 bp.registerBThread("ColdBt", function() {
-    bsync(coldEvent, emptySet, emptySet);
-    bsync(coldEvent, emptySet, emptySet);
-    bsync(coldEvent, emptySet, emptySet);
+    bsync({request:coldEvent});
+    bsync({request:coldEvent});
+    bsync({request:coldEvent});
 });
 
 bp.registerBThread("AlternatorBt", function() {
@@ -20,5 +20,5 @@ bp.registerBThread("AlternatorBt", function() {
         bsync({waitFor:coldEvent, block:hotEvent}); // block hot first, so as not to burn our thumb.
         bsync({waitFor:hotEvent, block:coldEvent});
     }
-    bsync(bp.Event("allDone"), emptySet, emptySet);
+    bsync({request:bp.Event("allDone")});
 });

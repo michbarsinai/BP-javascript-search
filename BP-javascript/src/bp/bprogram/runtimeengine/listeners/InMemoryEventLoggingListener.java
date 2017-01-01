@@ -37,7 +37,7 @@ public class InMemoryEventLoggingListener implements BProgramListener {
     }
 
     @Override
-    public void superstepDone(BProgram bp, EventSelectionResult.EmptyResult emptyResult) {
+    public void superstepDone(BProgram bp) {
     }
 
     @Override

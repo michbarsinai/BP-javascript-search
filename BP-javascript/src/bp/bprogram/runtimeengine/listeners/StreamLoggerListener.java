@@ -3,8 +3,6 @@ package bp.bprogram.runtimeengine.listeners;
 import bp.bprogram.runtimeengine.BProgram;
 import bp.bprogram.runtimeengine.BThreadSyncSnapshot;
 import bp.events.BEvent;
-import bp.eventselection.EventSelectionResult;
-import bp.eventselection.EventSelectionResult.EmptyResult;
 import java.io.PrintStream;
 
 /**
@@ -40,7 +38,7 @@ public class StreamLoggerListener implements BProgramListener {
     }
 
     @Override
-    public void superstepDone(BProgram bp, EventSelectionResult.EmptyResult emptyResult) {
+    public void superstepDone(BProgram bp) {
         out.println("---:" + bp.getName() + " No Event Selected");
     }
 

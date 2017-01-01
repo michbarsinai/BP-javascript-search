@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,9 +73,9 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
     }
 
     @Override
-    public EventSelectionResult select(Set<BSyncStatement> statements, List<BEvent> externalEvents, Set<BEvent> selectableEvents) {
+    public Optional<EventSelectionResult> select(Set<BSyncStatement> statements, List<BEvent> externalEvents, Set<BEvent> selectableEvents) {
         if ( selectableEvents.isEmpty() ) {
-            return EventSelectionResult.EMPTY_RESULT;
+            return Optional.empty();
         }
         
         BEvent chosen = new ArrayList<>(selectableEvents).get(rnd.nextInt(selectableEvents.size()));
@@ -85,10 +86,10 @@ public class SimpleEventSelectionStrategy implements EventSelectionStrategy {
                 .collect( Collectors.toSet() );
         
         if (requested.contains(chosen)) {
-            return new EventSelectionResult.EventSelected(chosen);
+            return Optional.of(new EventSelectionResult(chosen));
         } else {
             // that was an internal event, need to find the first index 
-            return new EventSelectionResult.EventSelected(chosen, singleton(externalEvents.indexOf(chosen)));
+            return Optional.of(new EventSelectionResult(chosen, singleton(externalEvents.indexOf(chosen))));
         }
     }
     

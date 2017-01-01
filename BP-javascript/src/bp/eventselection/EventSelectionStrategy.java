@@ -3,6 +3,7 @@ package bp.eventselection;
 import bp.bprogram.runtimeengine.BSyncStatement;
 import bp.events.BEvent;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -35,10 +36,10 @@ public interface EventSelectionStrategy {
      * @param statements statements of all participating BThreads.
      * @param externalEvents events queued by external processes.
      * @param selectableEvents A set of events to select from
-     * @return An event selection result.
+     * @return An event selection result, or no result.
      */
-    EventSelectionResult select(Set<BSyncStatement> statements, 
-                                List<BEvent> externalEvents,
-                                Set<BEvent> selectableEvents );
+    Optional<EventSelectionResult> select(Set<BSyncStatement> statements, 
+                                          List<BEvent> externalEvents,
+                                          Set<BEvent> selectableEvents );
     
 }

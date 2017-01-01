@@ -9,6 +9,12 @@ This library was originally created my @moshewe, but was refactored extensively 
 ## Change log for the BPjs library.
 
 ### NEXT
+* :sparkles: Simplified mechanism for handling event selection in `BProgram`. Replaced a complex Visitor pattern with Java8's `Optional`.
+* :sparkles: More tests for `SimpleEventSelectionStrategy`.
+* :sparkles: More documentation.
+
+
+### 2016-12-31
 * :put_litter_in_its_place: Removed `bpjs` from JS scope. Programs must use `bp` now.
 * :put_litter_in_its_place: Polished the interface for adding BThreads to a program: 1 method instead of 3.
 * :bug: Fixed an issue where external events were re-ordered while checking for daemon mode termination.

@@ -11,7 +11,6 @@ import java.util.concurrent.*;
 
 import bp.bprogram.runtimeengine.listeners.BProgramListener;
 import bp.eventselection.EventSelectionResult;
-import bp.eventselection.EventSelectionResult.EmptyResult;
 import bp.eventselection.EventSelectionStrategy;
 import bp.eventselection.SimpleEventSelectionStrategy;
 import static bp.eventsets.Events.all;
@@ -118,7 +117,7 @@ public abstract class BProgram {
     /**
      * Events are enqueued here by external threads
      */
-    private final LinkedBlockingDeque<BEvent> recentlyEnquqedExternalEvents = new LinkedBlockingDeque<>();
+    private final LinkedBlockingDeque<BEvent> recentlyEnqueuedExternalEvents = new LinkedBlockingDeque<>();
 
     /**
      * At the BProgram's leisure, the external event are moved here, where they
@@ -177,34 +176,46 @@ public abstract class BProgram {
         }
     }
 
-    final ResultHandler handler = new ResultHandler();
- 
     /**
      * Advances the BProgram a single super-step, that is until there are no
      * more internal events that can be selected.
      *
      * @throws InterruptedException
-     * @return The reason the super-step terminated.
      */
-    protected EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
-        handler.endResult = null;
+    protected void mainEventLoop() throws InterruptedException {
         boolean go = true;
         while (go) {
+            // 1. Possibly select an event
+            recentlyEnqueuedExternalEvents.drainTo(enqueuedExternalEvents);
+            if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
+                daemonMode = false;
+            }
             Set<BEvent> availableEvents = eventSelectionStrategy.selectableEvents(currentStatements(), enqueuedExternalEvents);
-            EventSelectionResult res = eventSelectionStrategy.select(currentStatements(), enqueuedExternalEvents, availableEvents);
-            go = res.accept(handler);
-            if ( bthreads.isEmpty() ) {
-                go = false; // no more BThreads left
+            if ( availableEvents.isEmpty() ) {
+                go = false;
             } else {
-                recentlyEnquqedExternalEvents.drainTo(enqueuedExternalEvents);
-                if (enqueuedExternalEvents.remove(NO_MORE_DAEMON)) {
-                    daemonMode = false;
+                Optional<EventSelectionResult> res = eventSelectionStrategy.select(currentStatements(), enqueuedExternalEvents, availableEvents);
+
+                // 2.Trigger the event
+                if ( res.isPresent() ) {
+                    EventSelectionResult esr = res.get();
+                    try {
+                        esr.getIndicesToRemove().stream().sorted(reverseOrder())
+                                .forEach( idxObj -> enqueuedExternalEvents.remove(idxObj.intValue()) );
+                        triggerEvent(esr.getEvent());
+                        finalizeRound();
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    if ( bthreads.isEmpty() ) {
+                        go = false; // no more BThreads left
+                    }
+                } else {
+                    go = false;
                 }
             }
         }
-        listeners.forEach(l -> l.superstepDone(this, handler.endResult));
-        return handler.endResult;
-
+        listeners.forEach(l -> l.superstepDone(this));
     }
     
     /**
@@ -398,7 +409,7 @@ public abstract class BProgram {
      * @param e
      */
     public void enqueueExternalEvent(BEvent e) {
-        recentlyEnquqedExternalEvents.add(e);
+        recentlyEnqueuedExternalEvents.add(e);
     }
 
     /**
@@ -465,14 +476,14 @@ public abstract class BProgram {
     protected abstract void setupProgramScope(Scriptable scope);
 
     private boolean waitForExternalEvent() throws InterruptedException {
-        BEvent next = recentlyEnquqedExternalEvents.takeFirst();
+        BEvent next = recentlyEnqueuedExternalEvents.takeFirst();
         
         if (next == NO_MORE_DAEMON) {
             daemonMode = false;
             return false;
         } else {
             // put the event back.
-            recentlyEnquqedExternalEvents.addFirst(next);
+            recentlyEnqueuedExternalEvents.addFirst(next);
             return true;
         }
     }
@@ -546,7 +557,7 @@ public abstract class BProgram {
     public void setDaemonMode(boolean newDaemonMode) {
         if (daemonMode && !newDaemonMode) {
             daemonMode = false;
-            recentlyEnquqedExternalEvents.add(NO_MORE_DAEMON);
+            recentlyEnqueuedExternalEvents.add(NO_MORE_DAEMON);
         } else {
             daemonMode = newDaemonMode;
         }
@@ -581,31 +592,4 @@ public abstract class BProgram {
         return name;
     }
     
-    /**
-     * Visitor for handling possible decisions of an {@link EventSelectionStrategy} 
-     * object.
-     */
-    class ResultHandler implements EventSelectionResult.Visitor<Boolean> {
-
-        EmptyResult endResult;
-
-        @Override
-        public Boolean visit(EventSelectionResult.EventSelected se) {
-            try {
-                se.getIndicesToRemove().stream().sorted(reverseOrder())
-                        .forEach( idxObj -> enqueuedExternalEvents.remove(idxObj.intValue()) );
-                triggerEvent(se.getEvent());
-                finalizeRound();
-                return true;
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        @Override
-        public Boolean visit(EventSelectionResult.EmptyResult dl) {
-            endResult = dl;
-            return false;
-        }
-    }
 }

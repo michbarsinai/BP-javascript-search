@@ -34,7 +34,7 @@ public class ContinuationGames {
         }
 
         @Override
-        public EventSelectionResult.EmptyResult mainEventLoop() throws InterruptedException {
+        public void mainEventLoop() throws InterruptedException {
             try {
                 BThreadSyncSnapshot bt = bthreads.iterator().next();
                 Object cnt = bt.getContinuation();
@@ -58,7 +58,6 @@ public class ContinuationGames {
             } catch (Exception ex) {
                 Logger.getLogger(ContinuationGames.class.getName()).log(Level.SEVERE, null, ex);
             }
-            return EventSelectionResult.EMPTY_RESULT;
         }
 
     }
